@@ -1,8 +1,10 @@
+// index.ts
+// Startpunkt för One Place To Live
+// Registrerar rotkomponenten som Expo använder för att starta appen
+
 import { registerRootComponent } from 'expo';
+import Navigation from './navigation';
 
-import App from './App';
-
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+// Registrerar Navigation som rotkomponent
+// Ersätter standard App.tsx som startpunkt
+registerRootComponent(Navigation);
