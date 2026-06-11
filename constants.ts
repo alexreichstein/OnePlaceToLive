@@ -127,7 +127,7 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
   // Gör rep — kräver bast
   make_rope: {
     id: 'make_rope',
-    name: 'Tvinна rep',
+    name: 'Tvinna rep',
     description: 'Tvinna ihop bastfibrer till ett starkt rep.',
     durationMinutes: 20,
     requires: { bark: 3 },

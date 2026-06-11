@@ -2,12 +2,14 @@
 // Hook för att hantera spelarens resurser mot Firebase
 // Hämtar, lägger till och drar av resurser från inventariet
 // Inventariet sparas som ett objekt i spelardokumentet
+// Fix: läser från Firestore direkt vid uppdatering för att undvika stale state
 
 import { useEffect, useState } from 'react';
 import {
   doc,
   onSnapshot,
   updateDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Inventory, ResourceType } from '../types';
@@ -15,7 +17,6 @@ import { Inventory, ResourceType } from '../types';
 // Sökvägen till spelardokumentet i Firestore
 const getPlayerRef = (userId: string) => doc(db, 'players', userId);
 
-// Hook som exponerar inventariedata och funktioner till UI-komponenter
 const useResources = (userId: string) => {
   // Inventariet — alla resurser spelaren äger
   const [inventory, setInventory] = useState<Inventory>({});
@@ -35,7 +36,6 @@ const useResources = (userId: string) => {
       (snapshot) => {
         setError(null);
         if (snapshot.exists()) {
-          // Hämtar inventariet från spelardokumentet
           const data = snapshot.data();
           setInventory((data.inventory as Inventory) ?? {});
         }
@@ -48,16 +48,22 @@ const useResources = (userId: string) => {
       }
     );
 
-    // Avslutar prenumerationen när userId ändras eller komponenten unmountas
     return () => unsubscribe();
   }, [userId]);
 
   // Lägger till resurser i inventariet
-  // Används när en task är klar och belöningar ska delas ut
+  // Läser ALLTID från Firestore direkt för att undvika stale state-buggen
+  // där gamla inventarievärden skriver över nya
   const addResources = async (rewards: Partial<Record<ResourceType, number>>): Promise<void> => {
     try {
-      // Beräknar det nya inventariet med tillagda resurser
-      const updatedInventory = { ...inventory };
+      // Hämtar färsk data direkt från Firestore istället för från React state
+      const snapshot = await getDoc(getPlayerRef(userId));
+      if (!snapshot.exists()) return;
+
+      const freshInventory = (snapshot.data().inventory as Inventory) ?? {};
+
+      // Beräknar det nya inventariet med tillagda resurser ovanpå färsk data
+      const updatedInventory = { ...freshInventory };
       for (const [resource, amount] of Object.entries(rewards)) {
         const key = resource as ResourceType;
         updatedInventory[key] = (updatedInventory[key] ?? 0) + (amount ?? 0);
@@ -72,20 +78,26 @@ const useResources = (userId: string) => {
   };
 
   // Drar av resurser från inventariet
-  // Används när en task startas och resurser ska förbrukas
+  // Läser också från Firestore direkt för konsekvens
   const consumeResources = async (costs: Partial<Record<ResourceType, number>>): Promise<void> => {
     try {
+      // Hämtar färsk data direkt från Firestore
+      const snapshot = await getDoc(getPlayerRef(userId));
+      if (!snapshot.exists()) return;
+
+      const freshInventory = (snapshot.data().inventory as Inventory) ?? {};
+
       // Kontrollerar att spelaren har tillräckligt med resurser
       for (const [resource, amount] of Object.entries(costs)) {
         const key = resource as ResourceType;
-        const current = inventory[key] ?? 0;
+        const current = freshInventory[key] ?? 0;
         if (current < (amount ?? 0)) {
           throw new Error(`Inte tillräckligt med ${resource}`);
         }
       }
 
       // Beräknar det nya inventariet med avdragna resurser
-      const updatedInventory = { ...inventory };
+      const updatedInventory = { ...freshInventory };
       for (const [resource, amount] of Object.entries(costs)) {
         const key = resource as ResourceType;
         updatedInventory[key] = (updatedInventory[key] ?? 0) - (amount ?? 0);
@@ -100,12 +112,10 @@ const useResources = (userId: string) => {
   };
 
   // Returnerar mängden av en specifik resurs
-  // Hjälpfunktion för att enkelt kolla en enskild resurs
   const getResourceAmount = (resource: ResourceType): number => {
     return inventory[resource] ?? 0;
   };
 
-  // Returnerar data och funktioner som komponenter behöver
   return { inventory, loading, error, addResources, consumeResources, getResourceAmount };
 };
 

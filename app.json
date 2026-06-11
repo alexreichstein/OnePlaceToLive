@@ -25,6 +25,18 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "557fc7a9-45c8-4186-b364-3ce02aae4634"
+      }
+    },
+    "owner": "yecko",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/557fc7a9-45c8-4186-b364-3ce02aae4634"
     }
   }
 }

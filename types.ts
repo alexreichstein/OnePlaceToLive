@@ -20,6 +20,14 @@ export type CharacterAppearance = {
   outfitColor: OutfitColor;
 };
 
+// Karaktärens vitala värden — hälsa, hunger och törst
+// Värden mellan 0-100 där 100 är fullt och 0 är kritiskt
+export type VitalStats = {
+  health: number;   // Hälsa — minskar vid skada eller svält
+  hunger: number;   // Hunger — minskar över tid, ökar när man äter
+  thirst: number;   // Törst — minskar snabbare än hunger
+};
+
 // Karaktärens fullständiga data — sparas i Firestore
 export type Character = {
   id: string;
@@ -27,6 +35,8 @@ export type Character = {
   appearance: CharacterAppearance; // Utseendevalen
   level: number;                   // Karaktärens nivå
   experience: number;              // Samlad erfarenhet
+  vitals: VitalStats;              // Hälsa, hunger och törst
+  lastVitalsUpdate: number;        // Tidsstämpel för senaste vitals-uppdatering
   createdAt: number;               // Tidsstämpel när karaktären skapades
 };
 
@@ -58,58 +68,58 @@ export type Inventory = Partial<Record<ResourceType, number>>;
 
 // Alla möjliga task-typer
 export type TaskType =
-  | 'gather_sticks'     // Samla pinnar
-  | 'gather_stones'     // Samla stenar
-  | 'gather_flint'      // Samla flinta
-  | 'gather_bark'       // Samla bast
-  | 'gather_berries'    // Samla bär
-  | 'gather_mushrooms'  // Samla svamp
-  | 'make_rope'         // Gör rep
-  | 'make_fire'         // Gör eld
-  | 'make_spear'        // Gör spjut
-  | 'build_shelter'     // Bygg vindskydd
-  | 'build_camp'        // Bygg läger
-  | 'hunt';             // Jaga
+  | 'gather_sticks'
+  | 'gather_stones'
+  | 'gather_flint'
+  | 'gather_bark'
+  | 'gather_berries'
+  | 'gather_mushrooms'
+  | 'make_rope'
+  | 'make_fire'
+  | 'make_spear'
+  | 'build_shelter'
+  | 'build_camp'
+  | 'hunt';
 
 // Definition av en task — statisk data som beskriver vad en task kräver och ger
 export type TaskDefinition = {
   id: TaskType;
-  name: string;                           // Visningsnamn
-  description: string;                    // Beskrivning av tasken
-  durationMinutes: number;                // Hur lång tid tasken tar
-  requires: Partial<Record<ResourceType, number>>; // Resurser som krävs
-  rewards: Partial<Record<ResourceType, number>>;  // Resurser som ges
-  requiresWorldItem?: WorldItemType;      // Kräver ett visst världsobjekt
-  createsWorldItem?: WorldItemType;       // Skapar ett visst världsobjekt
-  experienceReward: number;              // Erfarenhet som ges
-  levelRequired: number;                  // Miniminivå för att utföra tasken
+  name: string;
+  description: string;
+  durationMinutes: number;
+  requires: Partial<Record<ResourceType, number>>;
+  rewards: Partial<Record<ResourceType, number>>;
+  requiresWorldItem?: WorldItemType;
+  createsWorldItem?: WorldItemType;
+  experienceReward: number;
+  levelRequired: number;
 };
 
 // En aktiv task — sparas i Firestore när spelaren startar en task
 export type ActiveTask = {
   taskId: TaskType;
-  startTime: number;   // Tidsstämpel när tasken startades
-  endTime: number;     // Tidsstämpel när tasken är klar
+  startTime: number;
+  endTime: number;
 };
 
 // ─── Världsobjekt ─────────────────────────────────────────────────────────────
 
 // Objekt som kan skapas och synas i världsvyn
 export type WorldItemType =
-  | 'campfire'   // Brasa
-  | 'shelter'    // Vindskydd
-  | 'camp'       // Läger
-  | 'spear';     // Spjut (ligger på marken)
+  | 'campfire'
+  | 'shelter'
+  | 'camp'
+  | 'spear';
 
 // Ett världsobjekt — sparas i Firestore och visas i scenen
 export type WorldItem = {
   type: WorldItemType;
-  createdAt: number; // Tidsstämpel när objektet skapades
+  createdAt: number;
 };
 
 // ─── Spelstate ────────────────────────────────────────────────────────────────
 
-// Hela spelarens state — används för att ladda och spara spelet
+// Hela spelarens state
 export type PlayerState = {
   character: Character;
   inventory: Inventory;

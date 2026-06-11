@@ -1,7 +1,8 @@
 // hooks/useCharacter.ts
 // Hook för att hantera karaktärsdata mot Firebase
 // Skapar, hämtar och uppdaterar spelarens karaktär
-// En spelare har alltid exakt en karaktär kopplad till sitt userId
+// Inkluderar vitala värden: hälsa, hunger och törst
+// Fix: addExperience läser från Firestore direkt för att undvika stale state
 
 import { useEffect, useState } from 'react';
 import {
@@ -9,41 +10,38 @@ import {
   onSnapshot,
   setDoc,
   updateDoc,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Character, CharacterAppearance } from '../types';
-import { getLevel, LEVEL_THRESHOLDS } from '../constants';
+import { Character, CharacterAppearance, VitalStats } from '../types';
+import { getLevel } from '../constants';
 
 // Sökvägen till spelardokumentet i Firestore
-// Varje spelare har ett unikt userId som dokumentnyckeln
 const getPlayerRef = (userId: string) => doc(db, 'players', userId);
 
-// Hook som exponerar karaktärsdata och funktioner till UI-komponenter
-// userId identifierar spelaren — i framtiden kopplat till inloggning
+// Standardvärden för vitals när karaktären skapas
+const DEFAULT_VITALS: VitalStats = {
+  health: 100,
+  hunger: 100,
+  thirst: 100,
+};
+
 const useCharacter = (userId: string) => {
-  // Karaktärsdata — null om ingen karaktär skapats ännu
   const [character, setCharacter] = useState<Character | null>(null);
-
-  // Indikerar om första laddningen från Firestore pågår
   const [loading, setLoading] = useState(true);
-
-  // Felmeddelande om Firebase är nere — null om allt fungerar
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
 
-    // Prenumererar på realtidsuppdateringar för spelarens dokument
     const unsubscribe = onSnapshot(
       getPlayerRef(userId),
       (snapshot) => {
         setError(null);
         if (snapshot.exists()) {
-          // Karaktär finns — ladda in den
           const data = snapshot.data();
           setCharacter(data.character as Character);
         } else {
-          // Ingen karaktär finns ännu — spelaren måste skapa en
           setCharacter(null);
         }
         setLoading(false);
@@ -55,12 +53,10 @@ const useCharacter = (userId: string) => {
       }
     );
 
-    // Avslutar prenumerationen när userId ändras eller komponenten unmountas
     return () => unsubscribe();
   }, [userId]);
 
-  // Skapar en ny karaktär i Firestore
-  // Anropas första gången spelaren öppnar appen
+  // Skapar en ny karaktär i Firestore med standardvärden för vitals
   const createCharacter = async (
     name: string,
     appearance: CharacterAppearance
@@ -72,10 +68,11 @@ const useCharacter = (userId: string) => {
         appearance,
         level: 1,
         experience: 0,
+        vitals: DEFAULT_VITALS,
+        lastVitalsUpdate: Date.now(),
         createdAt: Date.now(),
       };
 
-      // Skapar eller ersätter spelardokumentet i Firestore
       await setDoc(getPlayerRef(userId), {
         character: newCharacter,
         inventory: {},
@@ -99,11 +96,16 @@ const useCharacter = (userId: string) => {
   };
 
   // Lägger till erfarenhet och uppdaterar nivån automatiskt
+  // Läser från Firestore direkt för att undvika stale state
   const addExperience = async (amount: number): Promise<void> => {
-    if (!character) return;
     try {
-      const newExperience = character.experience + amount;
+      const snapshot = await getDoc(getPlayerRef(userId));
+      if (!snapshot.exists()) return;
+
+      const freshCharacter = snapshot.data().character as Character;
+      const newExperience = freshCharacter.experience + amount;
       const newLevel = getLevel(newExperience);
+
       await updateDoc(getPlayerRef(userId), {
         'character.experience': newExperience,
         'character.level': newLevel,
@@ -113,8 +115,33 @@ const useCharacter = (userId: string) => {
     }
   };
 
-  // Returnerar data och funktioner som komponenter behöver
-  return { character, loading, error, createCharacter, updateAppearance, addExperience };
+  // Uppdaterar vitals — hälsa, hunger och törst
+  // Kläms mellan 0-100
+  const updateVitals = async (vitals: Partial<VitalStats>): Promise<void> => {
+    try {
+      const snapshot = await getDoc(getPlayerRef(userId));
+      if (!snapshot.exists()) return;
+
+      const freshCharacter = snapshot.data().character as Character;
+      const currentVitals = freshCharacter.vitals ?? DEFAULT_VITALS;
+
+      // Beräknar nya vitals — kläms mellan 0 och 100
+      const newVitals: VitalStats = {
+        health: Math.min(100, Math.max(0, vitals.health ?? currentVitals.health)),
+        hunger: Math.min(100, Math.max(0, vitals.hunger ?? currentVitals.hunger)),
+        thirst: Math.min(100, Math.max(0, vitals.thirst ?? currentVitals.thirst)),
+      };
+
+      await updateDoc(getPlayerRef(userId), {
+        'character.vitals': newVitals,
+        'character.lastVitalsUpdate': Date.now(),
+      });
+    } catch (e) {
+      throw new Error('Kunde inte uppdatera vitals.');
+    }
+  };
+
+  return { character, loading, error, createCharacter, updateAppearance, addExperience, updateVitals };
 };
 
 export default useCharacter;
