@@ -1,7 +1,7 @@
 // screens/WorldScreen.tsx
 // Huvudskärmen för spelet — visar skogsmiljön och aktiv task
 // Koordinerar alla hooks och skickar data till underkomponenter
-// Logiken är kvar här men renderingen är uppdelad i egna komponenter
+// Karaktären ritas nu direkt inuti ForestScene för naturlig djupkänsla
 
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -22,7 +22,6 @@ import ForestScene from '../components/ForestScene';
 import VitalsBar from '../components/VitalsBar';
 import ActiveTaskBar from '../components/ActiveTaskBar';
 import TaskListModal from '../components/TaskListModal';
-import CharacterSVG from '../components/CharacterSVG';
 import { TASK_DEFINITIONS, RESOURCE_NAMES } from '../constants';
 import { getAvailableTasks } from '../gameData/tasks';
 import { TaskType } from '../types';
@@ -39,33 +38,27 @@ export default function WorldScreen() {
   // Styr om task-listan är synlig
   const [showTaskList, setShowTaskList] = useState(false);
 
-  // Animationsvärde för karaktärens rörelse
+  // Animationsvärde för karaktärens horisontella rörelse
   const walkAnim = useRef(new Animated.Value(0)).current;
 
+  // Håller det aktuella walk-offset-värdet som skickas till ForestScene
+  const [walkOffset, setWalkOffset] = useState(0);
+
   // Hanterar när en task är klar
-  // Delar ut belöningar, XP och skapar eventuella världsobjekt
   const handleTaskCompleted = async (taskId: TaskType) => {
     const task = TASK_DEFINITIONS[taskId];
     if (!task) return;
 
     try {
-      // Lägg till resurser om tasken ger belöningar
       if (Object.keys(task.rewards).length > 0) {
         await addResources(task.rewards);
       }
-
-      // Lägg till erfarenhet — uppdaterar nivån automatiskt
       await addExperience(task.experienceReward);
-
-      // Skapa världsobjekt om tasken skapar ett
       if (task.createsWorldItem) {
         await addWorldItem(task.createsWorldItem);
       }
-
-      // Rensa den avklarade tasken
       await tasksHook.clearActiveTask();
 
-      // Visa belöningsmeddelande
       const rewardText = Object.entries(task.rewards)
         .map(([res, amt]) => `${amt} ${RESOURCE_NAMES[res] ?? res}`)
         .join(', ');
@@ -83,38 +76,45 @@ export default function WorldScreen() {
     }
   };
 
-  // Initierar useTasks efter handleTaskCompleted är definierad
   const tasksHook = useTasks(USER_ID, inventory, worldItems, handleTaskCompleted);
   const { activeTask, secondsRemaining, startTask } = tasksHook;
 
-  // Startar gånganimation när task pågår, stoppar när ingen task är aktiv
+  // Startar gånganimation och lyssnar på värdeändringar
+  // Skickar walkOffset till ForestScene som ritar karaktären på rätt position
   useEffect(() => {
     if (activeTask) {
-      Animated.loop(
+      const animation = Animated.loop(
         Animated.sequence([
           Animated.timing(walkAnim, {
-            toValue: 10,
+            toValue: 12,
             duration: 400,
-            useNativeDriver: true,
+            useNativeDriver: false, // Måste vara false för att kunna läsa värdet
           }),
           Animated.timing(walkAnim, {
-            toValue: -10,
+            toValue: -12,
             duration: 400,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }),
         ])
-      ).start();
+      );
+      animation.start();
+
+      // Lyssnar på animationsvärdet och uppdaterar walkOffset
+      const listener = walkAnim.addListener(({ value }) => {
+        setWalkOffset(value);
+      });
+
+      return () => {
+        animation.stop();
+        walkAnim.removeListener(listener);
+      };
     } else {
-      walkAnim.stopAnimation();
-      Animated.timing(walkAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
+      // Återställer positionen när ingen task pågår
+      walkAnim.setValue(0);
+      setWalkOffset(0);
     }
   }, [activeTask]);
 
-  // Startar en task efter att ha förbrukat resurser
   const handleStartTask = async (taskId: TaskType) => {
     const task = TASK_DEFINITIONS[taskId];
     if (!task) return;
@@ -125,7 +125,7 @@ export default function WorldScreen() {
       await startTask(taskId);
       setShowTaskList(false);
     } catch (e) {
-      Alert.alert('Fel', 'Kunde inte starta tasken. Kontrollera att du har tillräckligt med resurser.');
+      Alert.alert('Fel', 'Kunde inte starta tasken.');
     }
   };
 
@@ -137,40 +137,30 @@ export default function WorldScreen() {
     );
   }
 
-  // Hämtar tillgängliga tasks baserat på nivå
   const availableTasks = getAvailableTasks(character.level);
-
-  // Hämtar vitals med standardvärden om de saknas
   const vitals = character.vitals ?? { health: 100, hunger: 100, thirst: 100 };
 
   return (
     <SafeAreaView style={styles.container}>
 
-      {/* Vitals-rad med hälsa, hunger, törst och klocka */}
+      {/* Vitals-rad */}
       <VitalsBar
         vitals={vitals}
         currentTime={currentTime}
         timeOfDay={timeOfDay}
       />
 
-      {/* Skogsvyn — uppdateras med dag/natt-färger och världsobjekt */}
+      {/* Skogsvyn med karaktären integrerad */}
       <View style={styles.worldContainer}>
         <ForestScene
           worldItems={worldItems}
           colors={colors}
           showSun={showSun}
           timeOfDay={timeOfDay}
+          appearance={character.appearance}
+          isWalking={!!activeTask}
+          walkOffset={walkOffset}
         />
-
-        {/* Karaktären — animeras horisontellt när task pågår */}
-        <Animated.View
-          style={[
-            styles.characterInWorld,
-            { transform: [{ translateX: walkAnim }] },
-          ]}
-        >
-          <CharacterSVG appearance={character.appearance} size={80} />
-        </Animated.View>
       </View>
 
       {/* Aktiv task eller välj task-knapp */}
@@ -205,13 +195,10 @@ export default function WorldScreen() {
 }
 
 const styles = StyleSheet.create({
-  // Huvudbehållare
   container: {
     flex: 1,
     backgroundColor: '#1a1a1a',
   },
-
-  // Centrerad vy för felmeddelanden
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -222,22 +209,9 @@ const styles = StyleSheet.create({
     color: '#aaa',
     fontSize: 16,
   },
-
-  // Skogsvyn — tar upp majoriteten av skärmen
   worldContainer: {
     flex: 1,
-    position: 'relative',
   },
-
-  // Karaktären placerad i scenen
-  characterInWorld: {
-    position: 'absolute',
-    bottom: 10,
-    left: '50%',
-    transform: [{ translateX: -40 }],
-  },
-
-  // Knapp för att öppna task-listan
   startTaskBtn: {
     backgroundColor: '#4A7C59',
     margin: 12,
