@@ -177,7 +177,6 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 3,
   },
 
-  // Bygg brunn — kräver stenar och rep, möjliggör snabb vattenhämtning
   build_well: {
     id: 'build_well',
     name: 'Build a well',
@@ -190,7 +189,7 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 3,
   },
 
-  // ── Hunt ────────────────────────────────────────────────────────────────────
+  // ── Hunt — interagerar med spjutet ──────────────────────────────────────────
 
   hunt: {
     id: 'hunt',
@@ -202,11 +201,11 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     rewards: { meat: 2 },
     experienceReward: 80,
     levelRequired: 3,
+    interactsWith: 'spear', // Visas när man klickar på spjutet
   },
 
-  // ── Water ───────────────────────────────────────────────────────────────────
+  // ── Water — interagerar med brunnen ─────────────────────────────────────────
 
-  // Hämta vatten vid bäck — alltid tillgänglig men tar längre tid
   fetch_water_stream: {
     id: 'fetch_water_stream',
     name: 'Fetch water (stream)',
@@ -216,9 +215,9 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     rewards: { water: 3 },
     experienceReward: 15,
     levelRequired: 1,
+    // Ingen interactsWith — visas i vanliga task-listan
   },
 
-  // Hämta vatten från brunn — snabbare, kräver att brunnen är byggd
   fetch_water_well: {
     id: 'fetch_water_well',
     name: 'Fetch water (well)',
@@ -229,11 +228,11 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     rewards: { water: 3 },
     experienceReward: 5,
     levelRequired: 1,
+    interactsWith: 'well', // Visas när man klickar på brunnen
   },
 
-  // ── Eat & drink ─────────────────────────────────────────────────────────────
+  // ── Eat & drink — interagerar med brasan och inventariet ────────────────────
 
-  // Drick vatten — konsumerar 1 vatten, fyller törst med 33%
   drink_water: {
     id: 'drink_water',
     name: 'Drink water',
@@ -244,9 +243,9 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { thirst: 33 },
     experienceReward: 5,
     levelRequired: 1,
+    // Ingen interactsWith — visas i vanliga task-listan (kan dricka var som helst)
   },
 
-  // Ät bär — konsumerar 2 bär, fyller hunger med 10%
   eat_berries: {
     id: 'eat_berries',
     name: 'Eat berries',
@@ -257,9 +256,9 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { hunger: 10 },
     experienceReward: 5,
     levelRequired: 1,
+    // Ingen interactsWith — kan ätas var som helst
   },
 
-  // Ät svamp — konsumerar 1 svamp, fyller hunger med 15%
   eat_mushrooms: {
     id: 'eat_mushrooms',
     name: 'Eat mushrooms',
@@ -270,9 +269,9 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { hunger: 15 },
     experienceReward: 5,
     levelRequired: 1,
+    // Ingen interactsWith — kan ätas var som helst
   },
 
-  // Ät kött — konsumerar 1 kött, fyller hunger med 33%
   eat_meat: {
     id: 'eat_meat',
     name: 'Eat meat',
@@ -284,6 +283,7 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { hunger: 33 },
     experienceReward: 10,
     levelRequired: 1,
+    interactsWith: 'campfire', // Visas när man klickar på brasan
   },
 };
 
@@ -321,4 +321,13 @@ export const WORLD_ITEM_NAMES: Record<string, string> = {
   camp:     'Camp',
   spear:    'Spear',
   well:     'Well',
+};
+
+// Emoji för varje världsobjekt — används i interaktions-popup
+export const WORLD_ITEM_EMOJIS: Record<string, string> = {
+  campfire: '🔥',
+  shelter:  '🏕️',
+  camp:     '🏠',
+  spear:    '🗡️',
+  well:     '🪣',
 };

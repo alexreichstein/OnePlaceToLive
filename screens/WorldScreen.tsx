@@ -3,6 +3,7 @@
 // Koordinerar alla hooks och skickar data till underkomponenter
 // Karaktären animeras ut/in ur bild när tasks startar/slutar
 // Belöningar visas som flyande ikoner istället för alert
+// Worlditems är klickbara och öppnar en interaktions-popup
 
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -23,25 +24,21 @@ import ForestScene from '../components/ForestScene';
 import VitalsBar from '../components/VitalsBar';
 import ActiveTaskBar from '../components/ActiveTaskBar';
 import TaskListModal from '../components/TaskListModal';
+import WorldItemModal from '../components/WorldItemModal';
 import { TASK_DEFINITIONS, RESOURCE_NAMES, RESOURCE_EMOJIS } from '../constants';
 import { getAvailableTasks } from '../gameData/tasks';
-import { TaskType } from '../types';
+import { TaskType, WorldItemType } from '../types';
 
-// Temporärt hårdkodat userId — i framtiden kopplat till inloggning
 const USER_ID = 'player_alex';
-
-// Karaktärens startposition i mitten av scenen
 const CHAR_CENTER_X = 0;
-
-// Offset för att gå ut ur bild till höger
 const CHAR_OFFSCREEN_X = 450;
 
-// Typ för en flyande belönings-ikon
 type FloatingReward = {
   id: number;
   label: string;
-  anim: Animated.Value; // Vertikal position
+  anim: Animated.Value;
   opacity: Animated.Value;
+  bottomPos: number;
 };
 
 export default function WorldScreen() {
@@ -50,158 +47,125 @@ export default function WorldScreen() {
   const { worldItems, addWorldItem } = useWorld(USER_ID);
   const { timeOfDay, currentTime, colors, showSun } = useDayNight();
 
-  // Kör vitals-förfall i bakgrunden
   useVitals(USER_ID, character);
 
-  // Styr om task-listan är synlig
   const [showTaskList, setShowTaskList] = useState(false);
 
-  // Animationsvärde för karaktärens horisontella offset
+  // Håller vilket worlditem som är valt för interaktions-popup
+  const [selectedWorldItem, setSelectedWorldItem] = useState<WorldItemType | null>(null);
+
   const walkAnim = useRef(new Animated.Value(CHAR_CENTER_X)).current;
-
-  // Håller det aktuella walk-offset-värdet som skickas till ForestScene
   const [walkOffset, setWalkOffset] = useState(CHAR_CENTER_X);
-
-  // Lista med flyande belönings-ikoner som visas när en task är klar
   const [floatingRewards, setFloatingRewards] = useState<FloatingReward[]>([]);
-
-  // Räknare för att ge unika ID:n till flyande ikoner
   const rewardCounterRef = useRef(0);
+  const isHandlingCompletionRef = useRef(false);
+  const prevActiveTaskRef = useRef<typeof activeTask>(null);
 
-  // Ref för att hålla koll på om karaktären är ute ur bild
-  const isOffscreenRef = useRef(false);
-
-  // Lyssnar på animationsvärdet och uppdaterar walkOffset i state
   useEffect(() => {
-    const listener = walkAnim.addListener(({ value }) => {
-      setWalkOffset(value);
-    });
+    const listener = walkAnim.addListener(({ value }) => setWalkOffset(value));
     return () => walkAnim.removeListener(listener);
   }, []);
 
-  // Animerar karaktären ut ur bild till höger på 3 sekunder
-  const walkOffscreen = () => {
-    return new Promise<void>((resolve) => {
+  const walkOffscreen = (): Promise<void> => {
+    return new Promise((resolve) => {
       Animated.timing(walkAnim, {
         toValue: CHAR_OFFSCREEN_X,
         duration: 3000,
         useNativeDriver: false,
-      }).start(() => {
-        isOffscreenRef.current = true;
-        resolve();
-      });
+      }).start(() => resolve());
     });
   };
 
-  // Animerar karaktären in från höger till mitten på 3 sekunder
-  const walkOnscreen = () => {
-    return new Promise<void>((resolve) => {
+  const walkOnscreen = (): Promise<void> => {
+    return new Promise((resolve) => {
       walkAnim.setValue(CHAR_OFFSCREEN_X);
       Animated.timing(walkAnim, {
         toValue: CHAR_CENTER_X,
         duration: 3000,
         useNativeDriver: false,
-      }).start(() => {
-        isOffscreenRef.current = false;
-        resolve();
-      });
+      }).start(() => resolve());
     });
   };
 
-  // Visar en flyande ikon med text som flödar uppåt och tonas ut
-  const spawnFloatingReward = (label: string) => {
+  const spawnFloatingReward = (label: string, index: number) => {
     const id = rewardCounterRef.current++;
     const anim = new Animated.Value(0);
-    const opacity = new Animated.Value(1);
+    const opacity = new Animated.Value(0);
+    const bottomPos = 80 + index * 60;
+    const delay = index * 400;
 
-    setFloatingRewards((prev) => [...prev, { id, label, anim, opacity }]);
+    setFloatingRewards((prev) => [...prev, { id, label, anim, opacity, bottomPos }]);
 
-    // Animerar uppåt och tonar ut på 1.5 sekunder
-    Animated.parallel([
-      Animated.timing(anim, {
-        toValue: -80,
-        duration: 1500,
-        useNativeDriver: true,
-      }),
-      Animated.sequence([
-        Animated.delay(800),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 700,
-          useNativeDriver: true,
-        }),
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(anim, { toValue: -60, duration: 1600, useNativeDriver: true }),
       ]),
+      Animated.timing(opacity, { toValue: 0, duration: 400, useNativeDriver: true }),
     ]).start(() => {
-      // Ta bort ikonen ur listan när animationen är klar
       setFloatingRewards((prev) => prev.filter((r) => r.id !== id));
     });
   };
 
-  // Hanterar när en task är klar
-  // Karaktären kommer tillbaka, belöningar visas som flyande ikoner
   const handleTaskCompleted = async (taskId: TaskType) => {
+    if (isHandlingCompletionRef.current) return;
+    isHandlingCompletionRef.current = true;
+
     const task = TASK_DEFINITIONS[taskId];
-    if (!task) return;
+    if (!task) {
+      isHandlingCompletionRef.current = false;
+      return;
+    }
 
     try {
-      // Animera karaktären tillbaka in i bild
       await walkOnscreen();
 
-      // Lägg till resursbelöningar
+      let iconIndex = 0;
+
       if (Object.keys(task.rewards).length > 0) {
         await addResources(task.rewards);
-        // Spawn en ikon per resurstyp
         Object.entries(task.rewards).forEach(([res, amt]) => {
           const emoji = RESOURCE_EMOJIS[res] ?? '📦';
-          spawnFloatingReward(`${emoji} +${amt} ${RESOURCE_NAMES[res] ?? res}`);
+          spawnFloatingReward(`${emoji} +${amt} ${RESOURCE_NAMES[res] ?? res}`, iconIndex++);
         });
       }
 
-      // Återställ vitals om tasken har restoresVitals
       if (task.restoresVitals) {
         await updateVitals(task.restoresVitals);
-        // Spawn ikoner för varje vital som återställs
-        const vitalEmojis: Record<string, string> = {
-          health: '❤️',
-          hunger: '🍖',
-          thirst: '💧',
-        };
+        const vitalEmojis: Record<string, string> = { health: '❤️', hunger: '🍖', thirst: '💧' };
         Object.entries(task.restoresVitals).forEach(([vital, amt]) => {
-          spawnFloatingReward(`${vitalEmojis[vital] ?? '✨'} +${amt}`);
+          spawnFloatingReward(`${vitalEmojis[vital] ?? '✨'} +${amt}`, iconIndex++);
         });
       }
 
-      // Lägg till erfarenhet och spawn XP-ikon
       await addExperience(task.experienceReward);
-      spawnFloatingReward(`⭐ +${task.experienceReward} XP`);
+      spawnFloatingReward(`⭐ +${task.experienceReward} XP`, iconIndex++);
 
-      // Skapa världsobjekt om tasken skapar ett
       if (task.createsWorldItem) {
         await addWorldItem(task.createsWorldItem);
-        spawnFloatingReward(`🏗️ ${task.name} built!`);
+        spawnFloatingReward(`🏗️ ${task.name} built!`, iconIndex++);
       }
 
       await tasksHook.clearActiveTask();
     } catch (e) {
       console.error('Fel vid task-avslutning:', e);
+    } finally {
+      isHandlingCompletionRef.current = false;
     }
   };
 
   const tasksHook = useTasks(USER_ID, inventory, worldItems, handleTaskCompleted);
   const { activeTask, secondsRemaining, startTask } = tasksHook;
 
-  // Hanterar animation baserat på om en task är aktiv
+  // Animera ut karaktären när en ny task startar (null → task)
   useEffect(() => {
-    if (activeTask && !isOffscreenRef.current) {
-      // Ny task startad — animera karaktären ut ur bild
+    const wasNull = prevActiveTaskRef.current === null;
+    const isNowSet = activeTask !== null;
+    if (wasNull && isNowSet) {
       walkOffscreen();
-    } else if (!activeTask && isOffscreenRef.current) {
-      // Task avslutades externt — ta tillbaka karaktären
-      walkOnscreen();
-    } else if (!activeTask) {
-      // Ingen aktiv task — säkerställ korrekt position
-      walkAnim.setValue(CHAR_CENTER_X);
     }
+    prevActiveTaskRef.current = activeTask;
   }, [activeTask]);
 
   const handleStartTask = async (taskId: TaskType) => {
@@ -213,10 +177,16 @@ export default function WorldScreen() {
       }
       await startTask(taskId);
       setShowTaskList(false);
+      setSelectedWorldItem(null);
     } catch (e) {
-      // Visa inget alert — task-listan hanterar felbeskrivning
       console.error('Kunde inte starta task:', e);
     }
+  };
+
+  // Öppnar interaktions-popup för ett worlditem
+  const handleWorldItemPress = (item: WorldItemType) => {
+    if (activeTask) return; // Kan inte interagera under en pågående task
+    setSelectedWorldItem(item);
   };
 
   if (!character) {
@@ -227,20 +197,18 @@ export default function WorldScreen() {
     );
   }
 
-  const availableTasks = getAvailableTasks(character.level);
+  // Filtrera bort tasks som hör till worlditems — de visas i popup istället
+  const availableTasks = getAvailableTasks(character.level).filter(
+    (task) => !task.interactsWith
+  );
+
   const vitals = character.vitals ?? { health: 100, hunger: 100, thirst: 100 };
 
   return (
     <SafeAreaView style={styles.container}>
 
-      {/* Vitals-rad */}
-      <VitalsBar
-        vitals={vitals}
-        currentTime={currentTime}
-        timeOfDay={timeOfDay}
-      />
+      <VitalsBar vitals={vitals} currentTime={currentTime} timeOfDay={timeOfDay} />
 
-      {/* Skogsvyn med karaktären */}
       <View style={styles.worldContainer}>
         <ForestScene
           worldItems={worldItems}
@@ -250,15 +218,17 @@ export default function WorldScreen() {
           appearance={character.appearance}
           isWalking={!!activeTask}
           walkOffset={walkOffset}
+          onWorldItemPress={handleWorldItemPress}
         />
 
-        {/* Flyande belönings-ikoner — ritas ovanpå scenen */}
+        {/* Flyande belönings-ikoner */}
         {floatingRewards.map((reward) => (
           <Animated.Text
             key={reward.id}
             style={[
               styles.floatingReward,
               {
+                bottom: reward.bottomPos,
                 transform: [{ translateY: reward.anim }],
                 opacity: reward.opacity,
               },
@@ -269,7 +239,6 @@ export default function WorldScreen() {
         ))}
       </View>
 
-      {/* Aktiv task eller välj task-knapp */}
       {activeTask ? (
         <ActiveTaskBar
           activeTask={activeTask}
@@ -277,15 +246,12 @@ export default function WorldScreen() {
           onFinishNow={() => tasksHook.finishTaskNow()}
         />
       ) : (
-        <TouchableOpacity
-          style={styles.startTaskBtn}
-          onPress={() => setShowTaskList(true)}
-        >
+        <TouchableOpacity style={styles.startTaskBtn} onPress={() => setShowTaskList(true)}>
           <Text style={styles.startTaskBtnText}>⚔️ Choose task</Text>
         </TouchableOpacity>
       )}
 
-      {/* Task-lista modal */}
+      {/* Vanlig task-lista — utan worlditem-tasks */}
       <TaskListModal
         visible={showTaskList}
         onClose={() => setShowTaskList(false)}
@@ -296,28 +262,24 @@ export default function WorldScreen() {
         onSelectTask={handleStartTask}
       />
 
+      {/* Worlditem-interaktions-popup */}
+      <WorldItemModal
+        visible={selectedWorldItem !== null}
+        worldItem={selectedWorldItem}
+        inventory={inventory}
+        onClose={() => setSelectedWorldItem(null)}
+        onSelectTask={handleStartTask}
+      />
+
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1a1a1a',
-  },
-  centerText: {
-    color: '#aaa',
-    fontSize: 16,
-  },
-  worldContainer: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#1a1a1a' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' },
+  centerText: { color: '#aaa', fontSize: 16 },
+  worldContainer: { flex: 1 },
   startTaskBtn: {
     backgroundColor: '#4A7C59',
     margin: 12,
@@ -325,17 +287,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
   },
-  startTaskBtnText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 18,
-  },
-  // Flyande belönings-ikon — centrerad i scenen
+  startTaskBtnText: { color: '#fff', fontWeight: '700', fontSize: 18 },
   floatingReward: {
     position: 'absolute',
-    bottom: '40%',
     alignSelf: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
