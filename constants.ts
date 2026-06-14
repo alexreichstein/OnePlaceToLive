@@ -6,14 +6,12 @@ import { TaskDefinition, SkinTone, HairColor, OutfitColor } from './types';
 
 // ─── Karaktärsfärger ──────────────────────────────────────────────────────────
 
-// Hudtoner — hex-värden för SVG-rendering
 export const SKIN_TONES: Record<SkinTone, string> = {
-  light:  '#FDDBB4', // Ljus hudton
-  medium: '#C68642', // Mellanhudton
-  dark:   '#4A2912', // Mörk hudton
+  light:  '#FDDBB4',
+  medium: '#C68642',
+  dark:   '#4A2912',
 };
 
-// Hårfärger — hex-värden för SVG-rendering
 export const HAIR_COLORS: Record<HairColor, string> = {
   black:  '#1a1a1a',
   brown:  '#6B3A2A',
@@ -23,7 +21,6 @@ export const HAIR_COLORS: Record<HairColor, string> = {
   white:  '#E8E8E8',
 };
 
-// Klädsel — hex-värden för SVG-rendering
 export const OUTFIT_COLORS: Record<OutfitColor, string> = {
   green:  '#4A7C59',
   brown:  '#7C5C3A',
@@ -34,11 +31,8 @@ export const OUTFIT_COLORS: Record<OutfitColor, string> = {
 
 // ─── Erfarenhet och nivåer ────────────────────────────────────────────────────
 
-// Erfarenhet som krävs för varje nivå
-// Nivå 1 = 0 XP, Nivå 2 = 100 XP, Nivå 3 = 250 XP osv
 export const LEVEL_THRESHOLDS = [0, 100, 250, 500, 900, 1400, 2000, 2750, 3600, 4600];
 
-// Returnerar nuvarande nivå baserat på erfarenhet
 export const getLevel = (experience: number): number => {
   let level = 1;
   for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
@@ -49,14 +43,14 @@ export const getLevel = (experience: number): number => {
 
 // ─── Task-definitioner ────────────────────────────────────────────────────────
 
-// Alla tasks i spelet med krav, belöningar och tider
 export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
 
-  // Samla pinnar — enklaste tasken, inga krav
+  // ── Gather resources ────────────────────────────────────────────────────────
+
   gather_sticks: {
     id: 'gather_sticks',
-    name: 'Samla pinnar',
-    description: 'Plocka upp torra pinnar från skogsgolvet.',
+    name: 'Gather sticks',
+    description: 'Pick up dry sticks from the forest floor.',
     durationMinutes: 5,
     requires: {},
     rewards: { sticks: 5 },
@@ -64,11 +58,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Samla stenar — enkel task, inga krav
   gather_stones: {
     id: 'gather_stones',
-    name: 'Samla stenar',
-    description: 'Samla ihop lagom stora stenar.',
+    name: 'Gather stones',
+    description: 'Collect stones of suitable size.',
     durationMinutes: 5,
     requires: {},
     rewards: { stones: 3 },
@@ -76,11 +69,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Samla flinta — sällsynt, tar lite längre tid
   gather_flint: {
     id: 'gather_flint',
-    name: 'Samla flinta',
-    description: 'Leta efter skarp flintsten bland stenarna.',
+    name: 'Gather flint',
+    description: 'Search for sharp flint among the rocks.',
     durationMinutes: 15,
     requires: {},
     rewards: { flint: 1 },
@@ -88,11 +80,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Samla bast — från träd, tar lite tid
   gather_bark: {
     id: 'gather_bark',
-    name: 'Samla bast',
-    description: 'Skala av innerbarken från björkträd.',
+    name: 'Gather bark',
+    description: 'Strip inner bark from birch trees.',
     durationMinutes: 15,
     requires: {},
     rewards: { bark: 3 },
@@ -100,11 +91,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Samla bär — mat, enkel task
   gather_berries: {
     id: 'gather_berries',
-    name: 'Samla bär',
-    description: 'Plocka ätliga bär från buskarna.',
+    name: 'Gather berries',
+    description: 'Pick edible berries from the bushes.',
     durationMinutes: 10,
     requires: {},
     rewards: { berries: 5 },
@@ -112,11 +102,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Samla svamp — mat, tar lite längre tid
   gather_mushrooms: {
     id: 'gather_mushrooms',
-    name: 'Samla svamp',
-    description: 'Hitta ätlig svamp i skogen.',
+    name: 'Gather mushrooms',
+    description: 'Find edible mushrooms in the forest.',
     durationMinutes: 15,
     requires: {},
     rewards: { mushrooms: 3 },
@@ -124,11 +113,12 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Gör rep — kräver bast
+  // ── Craft items ─────────────────────────────────────────────────────────────
+
   make_rope: {
     id: 'make_rope',
-    name: 'Tvinna rep',
-    description: 'Tvinna ihop bastfibrer till ett starkt rep.',
+    name: 'Twist rope',
+    description: 'Twist bark fibres into a strong rope.',
     durationMinutes: 20,
     requires: { bark: 3 },
     rewards: { rope: 1 },
@@ -136,11 +126,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Gör eld — kräver pinnar, flinta och sten, skapar brasa i världen
   make_fire: {
     id: 'make_fire',
-    name: 'Tänd eld',
-    description: 'Slå flinta mot sten för att antända torra pinnar.',
+    name: 'Light a fire',
+    description: 'Strike flint against stone to ignite dry sticks.',
     durationMinutes: 20,
     requires: { sticks: 5, flint: 1, stones: 2 },
     rewards: {},
@@ -149,11 +138,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 1,
   },
 
-  // Gör spjut — kräver pinne, flinta och rep
   make_spear: {
     id: 'make_spear',
-    name: 'Gör spjut',
-    description: 'Fäst en flintspets på en lång pinne med rep.',
+    name: 'Craft a spear',
+    description: 'Attach a flint tip to a long stick with rope.',
     durationMinutes: 30,
     requires: { sticks: 2, flint: 1, rope: 1 },
     rewards: {},
@@ -162,11 +150,12 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 2,
   },
 
-  // Bygg vindskydd — kräver pinnar och rep
+  // ── Build structures ────────────────────────────────────────────────────────
+
   build_shelter: {
     id: 'build_shelter',
-    name: 'Bygg vindskydd',
-    description: 'Res upp pinnar och täck med grenar för ett enkelt vindskydd.',
+    name: 'Build shelter',
+    description: 'Prop up sticks and cover with branches for a basic windbreak.',
     durationMinutes: 45,
     requires: { sticks: 10, rope: 2 },
     rewards: {},
@@ -175,11 +164,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 2,
   },
 
-  // Bygg läger — kräver vindskydd och brasa
   build_camp: {
     id: 'build_camp',
-    name: 'Bygg läger',
-    description: 'Förbättra vindskyddet och skapa ett ordentligt läger.',
+    name: 'Build camp',
+    description: 'Improve the shelter and establish a proper camp.',
     durationMinutes: 120,
     requires: { sticks: 20, rope: 5, stones: 10 },
     requiresWorldItem: 'shelter',
@@ -189,11 +177,25 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 3,
   },
 
-  // Jaga — kräver spjut
+  // Bygg brunn — kräver stenar och rep, möjliggör snabb vattenhämtning
+  build_well: {
+    id: 'build_well',
+    name: 'Build a well',
+    description: 'Dig and line a well with stones. Gives access to water near camp.',
+    durationMinutes: 90,
+    requires: { stones: 15, rope: 3 },
+    rewards: {},
+    createsWorldItem: 'well',
+    experienceReward: 150,
+    levelRequired: 3,
+  },
+
+  // ── Hunt ────────────────────────────────────────────────────────────────────
+
   hunt: {
     id: 'hunt',
-    name: 'Jaga',
-    description: 'Spana in djur i skogen och kasta spjutet.',
+    name: 'Hunt',
+    description: 'Track animals in the forest and throw the spear.',
     durationMinutes: 60,
     requires: {},
     requiresWorldItem: 'spear',
@@ -201,25 +203,105 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     experienceReward: 80,
     levelRequired: 3,
   },
+
+  // ── Water ───────────────────────────────────────────────────────────────────
+
+  // Hämta vatten vid bäck — alltid tillgänglig men tar längre tid
+  fetch_water_stream: {
+    id: 'fetch_water_stream',
+    name: 'Fetch water (stream)',
+    description: 'Walk to the stream and fill your container with fresh water.',
+    durationMinutes: 20,
+    requires: {},
+    rewards: { water: 3 },
+    experienceReward: 15,
+    levelRequired: 1,
+  },
+
+  // Hämta vatten från brunn — snabbare, kräver att brunnen är byggd
+  fetch_water_well: {
+    id: 'fetch_water_well',
+    name: 'Fetch water (well)',
+    description: 'Draw water from the well near camp.',
+    durationMinutes: 5,
+    requires: {},
+    requiresWorldItem: 'well',
+    rewards: { water: 3 },
+    experienceReward: 5,
+    levelRequired: 1,
+  },
+
+  // ── Eat & drink ─────────────────────────────────────────────────────────────
+
+  // Drick vatten — konsumerar 1 vatten, fyller törst med 33%
+  drink_water: {
+    id: 'drink_water',
+    name: 'Drink water',
+    description: 'Drink from your water container and quench your thirst.',
+    durationMinutes: 1,
+    requires: { water: 1 },
+    rewards: {},
+    restoresVitals: { thirst: 33 },
+    experienceReward: 5,
+    levelRequired: 1,
+  },
+
+  // Ät bär — konsumerar 2 bär, fyller hunger med 10%
+  eat_berries: {
+    id: 'eat_berries',
+    name: 'Eat berries',
+    description: 'Eat a handful of berries. Tasty but not very filling.',
+    durationMinutes: 1,
+    requires: { berries: 2 },
+    rewards: {},
+    restoresVitals: { hunger: 10 },
+    experienceReward: 5,
+    levelRequired: 1,
+  },
+
+  // Ät svamp — konsumerar 1 svamp, fyller hunger med 15%
+  eat_mushrooms: {
+    id: 'eat_mushrooms',
+    name: 'Eat mushrooms',
+    description: 'Cook and eat the mushrooms. More filling than berries.',
+    durationMinutes: 5,
+    requires: { mushrooms: 1 },
+    rewards: {},
+    restoresVitals: { hunger: 15 },
+    experienceReward: 5,
+    levelRequired: 1,
+  },
+
+  // Ät kött — konsumerar 1 kött, fyller hunger med 33%
+  eat_meat: {
+    id: 'eat_meat',
+    name: 'Eat meat',
+    description: 'Roast the meat over the fire and enjoy a proper meal.',
+    durationMinutes: 15,
+    requires: { meat: 1 },
+    requiresWorldItem: 'campfire',
+    rewards: {},
+    restoresVitals: { hunger: 33 },
+    experienceReward: 10,
+    levelRequired: 1,
+  },
 };
 
 // ─── Resursnamn ───────────────────────────────────────────────────────────────
 
-// Svenska namn för varje resurstyp — används i UI
 export const RESOURCE_NAMES: Record<string, string> = {
-  sticks:    'Pinnar',
-  stones:    'Stenar',
-  flint:     'Flinta',
-  bark:      'Bast',
-  rope:      'Rep',
-  berries:   'Bär',
-  mushrooms: 'Svamp',
-  water:     'Vatten',
-  meat:      'Kött',
-  wood:      'Trä',
+  sticks:    'Sticks',
+  stones:    'Stones',
+  flint:     'Flint',
+  bark:      'Bark',
+  rope:      'Rope',
+  berries:   'Berries',
+  mushrooms: 'Mushrooms',
+  water:     'Water',
+  meat:      'Meat',
+  wood:      'Wood',
 };
 
-// Emoji för varje resurstyp — används i UI
 export const RESOURCE_EMOJIS: Record<string, string> = {
   sticks:    '🪵',
   stones:    '🪨',
@@ -233,10 +315,10 @@ export const RESOURCE_EMOJIS: Record<string, string> = {
   wood:      '🌲',
 };
 
-// Svenska namn för världsobjekt — används i UI
 export const WORLD_ITEM_NAMES: Record<string, string> = {
-  campfire: 'Brasa',
-  shelter:  'Vindskydd',
-  camp:     'Läger',
-  spear:    'Spjut',
+  campfire: 'Campfire',
+  shelter:  'Shelter',
+  camp:     'Camp',
+  spear:    'Spear',
+  well:     'Well',
 };

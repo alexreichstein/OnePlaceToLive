@@ -79,7 +79,14 @@ export type TaskType =
   | 'make_spear'
   | 'build_shelter'
   | 'build_camp'
-  | 'hunt';
+  | 'build_well'        // Bygg brunn — kräver stenar och rep
+  | 'hunt'
+  | 'fetch_water_stream' // Hämta vatten vid bäck — alltid tillgänglig
+  | 'fetch_water_well'   // Hämta vatten från brunn — snabbare, kräver brunn
+  | 'drink_water'        // Drick vatten — konsumerar vatten, fyller törst
+  | 'eat_berries'        // Ät bär — konsumerar bär, fyller hunger
+  | 'eat_mushrooms'      // Ät svamp — konsumerar svamp, fyller hunger
+  | 'eat_meat';          // Ät kött — konsumerar kött, fyller hunger mest
 
 // Definition av en task — statisk data som beskriver vad en task kräver och ger
 export type TaskDefinition = {
@@ -93,6 +100,8 @@ export type TaskDefinition = {
   createsWorldItem?: WorldItemType;
   experienceReward: number;
   levelRequired: number;
+  // Vitals som återställs när tasken är klar — positiva värden ökar vitalen
+  restoresVitals?: Partial<VitalStats>;
 };
 
 // En aktiv task — sparas i Firestore när spelaren startar en task
@@ -109,7 +118,8 @@ export type WorldItemType =
   | 'campfire'
   | 'shelter'
   | 'camp'
-  | 'spear';
+  | 'spear'
+  | 'well';      // Brunn — möjliggör snabb vattenhämtning
 
 // Ett världsobjekt — sparas i Firestore och visas i scenen
 export type WorldItem = {

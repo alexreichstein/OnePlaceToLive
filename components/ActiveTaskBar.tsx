@@ -9,16 +9,12 @@ import { TASK_DEFINITIONS } from '../constants';
 import { formatTimeRemaining } from '../gameData/tasks';
 
 type Props = {
-  activeTask: ActiveTask;        // Den aktiva tasken
-  secondsRemaining: number;      // Sekunder kvar av tasken
-  onFinishNow: () => void;       // Callback för finish-knappen (testning)
+  activeTask: ActiveTask;
+  secondsRemaining: number;
+  onFinishNow: () => void;
 };
 
-export default function ActiveTaskBar({
-  activeTask,
-  secondsRemaining,
-  onFinishNow,
-}: Props) {
+export default function ActiveTaskBar({ activeTask, secondsRemaining, onFinishNow }: Props) {
   // Hämtar task-definitionen för att visa namn
   const task = TASK_DEFINITIONS[activeTask.taskId];
   const taskName = task?.name ?? activeTask.taskId;
@@ -31,25 +27,25 @@ export default function ActiveTaskBar({
   return (
     <View style={styles.container}>
 
-      {/* Övre rad — task-namn och finish-knapp */}
+      {/* Top row — task name and finish button */}
       <View style={styles.topRow}>
         <View style={styles.taskInfo}>
-          <Text style={styles.taskLabel}>Pågående task:</Text>
+          <Text style={styles.taskLabel}>Active task:</Text>
           <Text style={styles.taskName}>{taskName}</Text>
         </View>
 
-        {/* Finish-knapp — gul för att synas tydligt under testning */}
+        {/* Finish button — only for testing */}
         <TouchableOpacity style={styles.finishBtn} onPress={onFinishNow}>
           <Text style={styles.finishBtnText}>⚡ Finish</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Progress-stapel — visar hur långt tasken har kommit */}
+      {/* Progress bar */}
       <View style={styles.progressBar}>
         <View style={[styles.progressFill, { width: `${progressPercent}%` as any }]} />
       </View>
 
-      {/* Nedräkningstimer */}
+      {/* Countdown timer */}
       <Text style={styles.timer}>
         ⏱ {formatTimeRemaining(secondsRemaining)}
       </Text>
@@ -59,7 +55,6 @@ export default function ActiveTaskBar({
 }
 
 const styles = StyleSheet.create({
-  // Huvudbehållare — mörk bakgrund med grön kant
   container: {
     backgroundColor: '#2a2a2a',
     padding: 14,
@@ -68,16 +63,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#4A7C59',
   },
-
-  // Övre rad med task-info och finish-knapp
   topRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 10,
   },
-
-  // Task-info — etikett och namn
   taskInfo: {
     flex: 1,
   },
@@ -91,8 +82,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-
-  // Finish-knapp för testning
   finishBtn: {
     backgroundColor: '#D4A843',
     paddingHorizontal: 14,
@@ -105,8 +94,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 13,
   },
-
-  // Progress-stapelns bakgrund
   progressBar: {
     height: 6,
     backgroundColor: '#333',
@@ -114,15 +101,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: 8,
   },
-
-  // Progress-stapelns fyllning — bredd sätts dynamiskt
   progressFill: {
     height: '100%',
     backgroundColor: '#4A7C59',
     borderRadius: 3,
   },
-
-  // Nedräkningstimer
   timer: {
     color: '#4A7C59',
     fontSize: 22,
