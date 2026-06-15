@@ -1,7 +1,7 @@
 // navigation.tsx
 // Hanterar all navigering i One Place To Live
 // Stack navigation med tre skärmar: Karaktär, Värld och Inventarie
-// Bottom tab navigation för enkel åtkomst till alla skärmar
+// WorldStack har en extra screen för utforskning söderut
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -10,16 +10,23 @@ import { Text } from 'react-native';
 import CharacterScreen from './screens/CharacterScreen';
 import WorldScreen from './screens/WorldScreen';
 import InventoryScreen from './screens/InventoryScreen';
+import ExploreScreen from './screens/ExploreScreen';
 
-// Definierar parametrar för stack-navigeringen
 export type RootStackParamList = {
   CharacterTab: undefined;
   WorldTab: undefined;
   InventoryTab: undefined;
 };
 
+// Parametrar för WorldStack — inkluderar ExploreScreen
+export type WorldStackParamList = {
+  WorldMain: undefined;
+  Explore: undefined;
+};
+
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator<RootStackParamList>();
+const WorldStackNav = createStackNavigator<WorldStackParamList>();
 
 // Stack för karaktärsskärmen
 function CharacterStack() {
@@ -30,12 +37,14 @@ function CharacterStack() {
   );
 }
 
-// Stack för världsskärmen
+// WorldStack — innehåller WorldScreen och ExploreScreen
+// ExploreScreen nås via pilen i scenen, inte via bottom tabs
 function WorldStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="WorldTab" component={WorldScreen} />
-    </Stack.Navigator>
+    <WorldStackNav.Navigator screenOptions={{ headerShown: false }}>
+      <WorldStackNav.Screen name="WorldMain" component={WorldScreen} />
+      <WorldStackNav.Screen name="Explore" component={ExploreScreen} />
+    </WorldStackNav.Navigator>
   );
 }
 
@@ -55,10 +64,10 @@ export default function Navigation() {
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: '#4A7C59',    // Grön för aktiv flik — skogstema
-          tabBarInactiveTintColor: '#9E9E9E',  // Grå för inaktiv flik
+          tabBarActiveTintColor: '#4A7C59',
+          tabBarInactiveTintColor: '#9E9E9E',
           tabBarStyle: {
-            backgroundColor: '#1a1a1a',        // Mörk bakgrund — naturtema
+            backgroundColor: '#1a1a1a',
             borderTopWidth: 1,
             borderTopColor: '#333',
             paddingBottom: 4,

@@ -2,8 +2,7 @@
 // Huvudskärmen för spelet — visar skogsmiljön och aktiv task
 // Koordinerar alla hooks och skickar data till underkomponenter
 // Karaktären animeras ut/in ur bild när tasks startar/slutar
-// Belöningar visas som flyande ikoner istället för alert
-// Worlditems är klickbara och öppnar en interaktions-popup
+// Pil längs stigen navigerar till ExploreScreen
 
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -14,6 +13,8 @@ import {
   Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import useCharacter from '../hooks/useCharacter';
 import useResources from '../hooks/useResources';
 import useTasks from '../hooks/useTasks';
@@ -28,6 +29,9 @@ import WorldItemModal from '../components/WorldItemModal';
 import { TASK_DEFINITIONS, RESOURCE_NAMES, RESOURCE_EMOJIS } from '../constants';
 import { getAvailableTasks } from '../gameData/tasks';
 import { TaskType, WorldItemType } from '../types';
+import { WorldStackParamList } from '../navigation';
+
+type NavigationProp = StackNavigationProp<WorldStackParamList, 'WorldMain'>;
 
 const USER_ID = 'player_alex';
 const CHAR_CENTER_X = 0;
@@ -42,6 +46,8 @@ type FloatingReward = {
 };
 
 export default function WorldScreen() {
+  const navigation = useNavigation<NavigationProp>();
+
   const { character, addExperience, updateVitals } = useCharacter(USER_ID);
   const { inventory, addResources, consumeResources } = useResources(USER_ID);
   const { worldItems, addWorldItem } = useWorld(USER_ID);
@@ -50,8 +56,6 @@ export default function WorldScreen() {
   useVitals(USER_ID, character);
 
   const [showTaskList, setShowTaskList] = useState(false);
-
-  // Håller vilket worlditem som är valt för interaktions-popup
   const [selectedWorldItem, setSelectedWorldItem] = useState<WorldItemType | null>(null);
 
   const walkAnim = useRef(new Animated.Value(CHAR_CENTER_X)).current;
@@ -120,7 +124,6 @@ export default function WorldScreen() {
 
     try {
       await walkOnscreen();
-
       let iconIndex = 0;
 
       if (Object.keys(task.rewards).length > 0) {
@@ -158,13 +161,10 @@ export default function WorldScreen() {
   const tasksHook = useTasks(USER_ID, inventory, worldItems, handleTaskCompleted);
   const { activeTask, secondsRemaining, startTask } = tasksHook;
 
-  // Animera ut karaktären när en ny task startar (null → task)
   useEffect(() => {
     const wasNull = prevActiveTaskRef.current === null;
     const isNowSet = activeTask !== null;
-    if (wasNull && isNowSet) {
-      walkOffscreen();
-    }
+    if (wasNull && isNowSet) walkOffscreen();
     prevActiveTaskRef.current = activeTask;
   }, [activeTask]);
 
@@ -183,9 +183,8 @@ export default function WorldScreen() {
     }
   };
 
-  // Öppnar interaktions-popup för ett worlditem
   const handleWorldItemPress = (item: WorldItemType) => {
-    if (activeTask) return; // Kan inte interagera under en pågående task
+    if (activeTask) return;
     setSelectedWorldItem(item);
   };
 
@@ -197,11 +196,9 @@ export default function WorldScreen() {
     );
   }
 
-  // Filtrera bort tasks som hör till worlditems — de visas i popup istället
   const availableTasks = getAvailableTasks(character.level).filter(
     (task) => !task.interactsWith
   );
-
   const vitals = character.vitals ?? { health: 100, hunger: 100, thirst: 100 };
 
   return (
@@ -220,6 +217,17 @@ export default function WorldScreen() {
           walkOffset={walkOffset}
           onWorldItemPress={handleWorldItemPress}
         />
+
+        {/* Pil söderut längs stigen — navigerar till ExploreScreen */}
+        {!activeTask && (
+          <TouchableOpacity
+            style={styles.exploreArrow}
+            onPress={() => navigation.navigate('Explore')}
+          >
+            <Text style={styles.exploreArrowText}>↓</Text>
+            <Text style={styles.exploreArrowLabel}>Explore</Text>
+          </TouchableOpacity>
+        )}
 
         {/* Flyande belönings-ikoner */}
         {floatingRewards.map((reward) => (
@@ -251,7 +259,6 @@ export default function WorldScreen() {
         </TouchableOpacity>
       )}
 
-      {/* Vanlig task-lista — utan worlditem-tasks */}
       <TaskListModal
         visible={showTaskList}
         onClose={() => setShowTaskList(false)}
@@ -262,7 +269,6 @@ export default function WorldScreen() {
         onSelectTask={handleStartTask}
       />
 
-      {/* Worlditem-interaktions-popup */}
       <WorldItemModal
         visible={selectedWorldItem !== null}
         worldItem={selectedWorldItem}
@@ -299,5 +305,28 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     overflow: 'hidden',
+  },
+  // Pil längs stigen — centrerad längst ner i scenen
+  exploreArrow: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  exploreArrowText: {
+    color: '#fff',
+    fontSize: 26,
+    fontWeight: '700',
+  },
+  exploreArrowLabel: {
+    color: '#aaa',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
