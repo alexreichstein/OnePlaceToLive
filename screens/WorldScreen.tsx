@@ -1,8 +1,7 @@
 // screens/WorldScreen.tsx
 // Huvudskärmen för spelet — visar skogsmiljön och aktiv task
-// Koordinerar alla hooks och skickar data till underkomponenter
-// Karaktären animeras ut/in ur bild när tasks startar/slutar
-// Pil längs stigen navigerar till ExploreScreen
+// SVG-scenen fyller hela skärmen mellan VitalsBar och bottom tabs
+// Skylten och Choose task-knappen är inbyggda i scenen
 
 import { useState, useEffect, useRef } from 'react';
 import {
@@ -95,7 +94,7 @@ export default function WorldScreen() {
     const id = rewardCounterRef.current++;
     const anim = new Animated.Value(0);
     const opacity = new Animated.Value(0);
-    const bottomPos = 80 + index * 60;
+    const bottomPos = 100 + index * 60;
     const delay = index * 400;
 
     setFloatingRewards((prev) => [...prev, { id, label, anim, opacity, bottomPos }]);
@@ -185,6 +184,11 @@ export default function WorldScreen() {
 
   const handleWorldItemPress = (item: WorldItemType) => {
     if (activeTask) return;
+    // Lägret navigerar till CampScreen istället för popup
+    if (item === 'camp') {
+      navigation.navigate('Camp');
+      return;
+    }
     setSelectedWorldItem(item);
   };
 
@@ -204,8 +208,10 @@ export default function WorldScreen() {
   return (
     <SafeAreaView style={styles.container}>
 
+      {/* Vitals-rad längst upp */}
       <VitalsBar vitals={vitals} currentTime={currentTime} timeOfDay={timeOfDay} />
 
+      {/* Scenen fyller allt utrymme mellan VitalsBar och bottom tabs */}
       <View style={styles.worldContainer}>
         <ForestScene
           worldItems={worldItems}
@@ -218,15 +224,40 @@ export default function WorldScreen() {
           onWorldItemPress={handleWorldItemPress}
         />
 
-        {/* Pil söderut längs stigen — navigerar till ExploreScreen */}
+        {/* Träskylt — placerad inuti scenen längs stigen, nedre halvan */}
         {!activeTask && (
           <TouchableOpacity
-            style={styles.exploreArrow}
+            style={styles.signPost}
             onPress={() => navigation.navigate('Explore')}
+            activeOpacity={0.8}
           >
-            <Text style={styles.exploreArrowText}>↓</Text>
-            <Text style={styles.exploreArrowLabel}>Explore</Text>
+            <View style={styles.signBoard}>
+              <Text style={styles.signText}>→ South</Text>
+            </View>
+            <View style={styles.signPole} />
           </TouchableOpacity>
+        )}
+
+        {/* Choose task — inuti scenen längst ner */}
+        {!activeTask && (
+          <TouchableOpacity
+            style={styles.chooseTaskBtn}
+            onPress={() => setShowTaskList(true)}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.chooseTaskText}>⚔️ Choose task</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Active task bar — inuti scenen när task pågår */}
+        {activeTask && (
+          <View style={styles.activeTaskContainer}>
+            <ActiveTaskBar
+              activeTask={activeTask}
+              secondsRemaining={secondsRemaining}
+              onFinishNow={() => tasksHook.finishTaskNow()}
+            />
+          </View>
         )}
 
         {/* Flyande belönings-ikoner */}
@@ -247,18 +278,7 @@ export default function WorldScreen() {
         ))}
       </View>
 
-      {activeTask ? (
-        <ActiveTaskBar
-          activeTask={activeTask}
-          secondsRemaining={secondsRemaining}
-          onFinishNow={() => tasksHook.finishTaskNow()}
-        />
-      ) : (
-        <TouchableOpacity style={styles.startTaskBtn} onPress={() => setShowTaskList(true)}>
-          <Text style={styles.startTaskBtnText}>⚔️ Choose task</Text>
-        </TouchableOpacity>
-      )}
-
+      {/* Modaler */}
       <TaskListModal
         visible={showTaskList}
         onClose={() => setShowTaskList(false)}
@@ -282,18 +302,91 @@ export default function WorldScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#1a1a1a' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#1a1a1a' },
-  centerText: { color: '#aaa', fontSize: 16 },
-  worldContainer: { flex: 1 },
-  startTaskBtn: {
-    backgroundColor: '#4A7C59',
-    margin: 12,
-    padding: 16,
-    borderRadius: 12,
+  container: {
+    flex: 1,
+    backgroundColor: '#1a1a1a',
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#1a1a1a',
+  },
+  centerText: {
+    color: '#aaa',
+    fontSize: 16,
+  },
+  // Scenen fyller hela utrymmet
+  worldContainer: {
+    flex: 1,
+  },
+
+  // Träskylt — inuti scenen, centrad längs stigen
+  signPost: {
+    position: 'absolute',
+    bottom: 90,
+    left: '54%',
     alignItems: 'center',
   },
-  startTaskBtnText: { color: '#fff', fontWeight: '700', fontSize: 18 },
+  signBoard: {
+    backgroundColor: '#8B6914',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#5C4A0A',
+    transform: [{ rotate: '-3deg' }],
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
+  signText: {
+    color: '#FFF8DC',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  signPole: {
+    width: 6,
+    height: 28,
+    backgroundColor: '#6B4A10',
+    borderRadius: 2,
+  },
+
+  // Choose task — längst ner i scenen
+  chooseTaskBtn: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(74, 124, 89, 0.92)',
+    paddingVertical: 16,
+    borderRadius: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#5A9C6A',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+  },
+  chooseTaskText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 18,
+  },
+
+  // Active task bar — inuti scenen
+  activeTaskContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+
   floatingReward: {
     position: 'absolute',
     alignSelf: 'center',
@@ -305,28 +398,5 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     overflow: 'hidden',
-  },
-  // Pil längs stigen — centrerad längst ner i scenen
-  exploreArrow: {
-    position: 'absolute',
-    bottom: 20,
-    alignSelf: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.15)',
-  },
-  exploreArrowText: {
-    color: '#fff',
-    fontSize: 26,
-    fontWeight: '700',
-  },
-  exploreArrowLabel: {
-    color: '#aaa',
-    fontSize: 11,
-    fontWeight: '600',
   },
 });

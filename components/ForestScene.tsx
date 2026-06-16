@@ -1,6 +1,7 @@
 // components/ForestScene.tsx
 // SVG-komponent som ritar skogsmiljön med karaktären integrerad i scenen
-// Worlditems är klickbara via onPress på transparenta Rect-element
+// Utzoomad vy (viewBox 600x420) för mer rymd och perspektiv
+// Lägret är i bakgrunden till vänster, elden centralt, brunnen till vänster om elden
 
 import { Svg, Rect, Circle, Ellipse, Path, G, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { View } from 'react-native';
@@ -81,12 +82,18 @@ const shadeColor = (color: string, amount: number): string => {
 export default function ForestScene({
   worldItems, colors, showSun, timeOfDay, appearance, isWalking, walkOffset, onWorldItemPress,
 }: Props) {
-  const charX = 200 + walkOffset;
-  const charY = 282;
+  const charX = 300 + walkOffset;
+  const charY = 330;
 
   return (
-    <View style={{ flex: 1 }}>
-      <Svg width="100%" height="100%" viewBox="0 0 400 400">
+    <View style={{ flex: 1, width: '100%', height: '100%' }}>
+      <Svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 600 420"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ flex: 1 }}
+      >
         <Defs>
           <LinearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={colors.sky} stopOpacity="1" />
@@ -96,178 +103,208 @@ export default function ForestScene({
             <Stop offset="0" stopColor={colors.grass} stopOpacity="1" />
             <Stop offset="1" stopColor={colors.ground} stopOpacity="1" />
           </LinearGradient>
+          <LinearGradient id="roofGrad" x1="0" y1="0" x2="0" y2="1">
+            <Stop offset="0" stopColor="#8B5E3C" stopOpacity="1" />
+            <Stop offset="1" stopColor="#5C3A1E" stopOpacity="1" />
+          </LinearGradient>
         </Defs>
 
-        <Rect x="0" y="0" width="400" height="270" fill="url(#skyGrad)" />
+        {/* ─── Himmel ───────────────────────────────────────────────────────── */}
+        <Rect x="0" y="0" width="600" height="420" fill="url(#skyGrad)" />
 
         {showSun && (
           <G>
-            <Circle cx="60" cy="60" r="30" fill="#FFD700" opacity="0.9" />
-            <Circle cx="60" cy="60" r="24" fill="#FFE066" />
-            <Path d="M60 15 L60 25" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M60 95 L60 105" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M15 60 L25 60" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M95 60 L105 60" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M27 27 L34 34" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M86 86 L93 93" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M93 27 L86 34" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
-            <Path d="M34 86 L27 93" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Circle cx="80" cy="70" r="34" fill="#FFD700" opacity="0.9" />
+            <Circle cx="80" cy="70" r="27" fill="#FFE066" />
+            <Path d="M80 20 L80 32" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M80 108 L80 120" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M30 70 L42 70" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M118 70 L130 70" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M44 34 L52 42" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M108 98 L116 106" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M116 34 L108 42" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
+            <Path d="M52 98 L44 106" stroke="#FFD700" strokeWidth="3" strokeLinecap="round" />
           </G>
         )}
 
         {!showSun && (
           <G>
-            <Circle cx="340" cy="55" r="30" fill="#E8D5A0" />
-            <Circle cx="354" cy="44" r="24" fill={colors.sky} />
-            <Circle cx="30" cy="25" r="1.5" fill="#fff" opacity="0.8" />
-            <Circle cx="90" cy="40" r="1" fill="#fff" opacity="0.8" />
-            <Circle cx="150" cy="18" r="2" fill="#fff" opacity="0.8" />
-            <Circle cx="200" cy="45" r="1" fill="#fff" opacity="0.8" />
-            <Circle cx="250" cy="22" r="1.5" fill="#fff" opacity="0.8" />
-            <Circle cx="295" cy="60" r="1" fill="#fff" opacity="0.8" />
-            <Circle cx="170" cy="65" r="1" fill="#fff" opacity="0.8" />
-            <Circle cx="65" cy="60" r="1.5" fill="#fff" opacity="0.8" />
-            <Circle cx="120" cy="80" r="1" fill="#fff" opacity="0.8" />
-            <Circle cx="320" cy="30" r="1" fill="#fff" opacity="0.8" />
+            <Circle cx="500" cy="65" r="34" fill="#E8D5A0" />
+            <Circle cx="518" cy="52" r="27" fill={colors.sky} />
+            <Circle cx="40" cy="30" r="1.5" fill="#fff" opacity="0.8" />
+            <Circle cx="120" cy="50" r="1" fill="#fff" opacity="0.8" />
+            <Circle cx="200" cy="22" r="2" fill="#fff" opacity="0.8" />
+            <Circle cx="280" cy="55" r="1" fill="#fff" opacity="0.8" />
+            <Circle cx="350" cy="28" r="1.5" fill="#fff" opacity="0.8" />
+            <Circle cx="420" cy="72" r="1" fill="#fff" opacity="0.8" />
+            <Circle cx="160" cy="75" r="1" fill="#fff" opacity="0.8" />
+            <Circle cx="80" cy="68" r="1.5" fill="#fff" opacity="0.8" />
           </G>
         )}
 
         {(timeOfDay === 'evening' || timeOfDay === 'sunset') && (
-          <Ellipse cx="200" cy="270" rx="200" ry="50" fill="#CC5500" opacity="0.15" />
+          <Ellipse cx="300" cy="300" rx="300" ry="60" fill="#CC5500" opacity="0.15" />
         )}
 
-        <Rect x="0" y="160" width="8" height="120" fill="#2A1A0A" />
-        <Ellipse cx="4" cy="145" rx="18" ry="24" fill={colors.treeDark} />
-        <Rect x="50" y="150" width="8" height="130" fill="#2A1A0A" />
-        <Ellipse cx="54" cy="134" rx="20" ry="26" fill={colors.treeDark} />
-        <Rect x="340" y="155" width="8" height="125" fill="#2A1A0A" />
-        <Ellipse cx="344" cy="140" rx="19" ry="25" fill={colors.treeDark} />
-        <Rect x="385" y="160" width="8" height="120" fill="#2A1A0A" />
-        <Ellipse cx="389" cy="145" rx="17" ry="23" fill={colors.treeDark} />
-        <Rect x="185" y="140" width="8" height="140" fill="#2A1A0A" />
-        <Ellipse cx="189" cy="124" rx="16" ry="22" fill={colors.treeDark} />
+        {/* ─── Bakre skog ───────────────────────────────────────────────────── */}
+        <Rect x="0" y="195" width="8" height="120" fill="#2A1A0A" />
+        <Ellipse cx="4" cy="178" rx="20" ry="26" fill={colors.treeDark} />
+        <Rect x="55" y="185" width="8" height="130" fill="#2A1A0A" />
+        <Ellipse cx="59" cy="168" rx="22" ry="28" fill={colors.treeDark} />
+        <Rect x="520" y="190" width="8" height="125" fill="#2A1A0A" />
+        <Ellipse cx="524" cy="173" rx="20" ry="26" fill={colors.treeDark} />
+        <Rect x="575" y="195" width="8" height="120" fill="#2A1A0A" />
+        <Ellipse cx="579" cy="178" rx="18" ry="24" fill={colors.treeDark} />
+        <Rect x="278" y="175" width="8" height="140" fill="#2A1A0A" />
+        <Ellipse cx="282" cy="158" rx="17" ry="23" fill={colors.treeDark} />
 
-        <Rect x="0" y="268" width="400" height="132" fill="url(#groundGrad)" />
-        <Ellipse cx="200" cy="268" rx="220" ry="20" fill={colors.grass} />
-        <Ellipse cx="80" cy="272" rx="40" ry="10" fill={colors.treeLight} opacity="0.5" />
-        <Ellipse cx="320" cy="274" rx="35" ry="9" fill={colors.treeLight} opacity="0.5" />
+        {/* ─── Mark — fyller hela nedre halvan ──────────────────────────────── */}
+        <Rect x="0" y="300" width="600" height="120" fill="url(#groundGrad)" />
+        <Ellipse cx="300" cy="300" rx="320" ry="20" fill={colors.grass} />
 
-        <Rect x="20" y="180" width="14" height="100" fill="#3A2010" />
-        <Ellipse cx="27" cy="163" rx="30" ry="36" fill={colors.treeLight} />
-        <Ellipse cx="27" cy="145" rx="22" ry="28" fill={colors.treeDark} />
-        <Rect x="360" y="185" width="14" height="95" fill="#3A2010" />
-        <Ellipse cx="367" cy="168" rx="28" ry="34" fill={colors.treeLight} />
-        <Ellipse cx="367" cy="150" rx="20" ry="26" fill={colors.treeDark} />
+        {/* ─── Mellanlager träd ─────────────────────────────────────────────── */}
+        <Rect x="22" y="215" width="16" height="95" fill="#3A2010" />
+        <Ellipse cx="30" cy="198" rx="32" ry="40" fill={colors.treeLight} />
+        <Ellipse cx="30" cy="178" rx="24" ry="30" fill={colors.treeDark} />
 
-        {/* Brasa — transparent Rect som klickyta ovanpå */}
-        {worldItems.includes('campfire') && (
-          <G>
-            <Ellipse cx="270" cy="285" rx="20" ry="7" fill="#444" />
-            <Rect x="258" y="275" width="24" height="7" rx="3" fill="#3A2010" />
-            <Ellipse cx="270" cy="268" rx="8" ry="11" fill="#CC4400" />
-            <Ellipse cx="267" cy="266" rx="5" ry="9" fill="#FF6600" />
-            <Ellipse cx="273" cy="267" rx="5" ry="8" fill="#FF6600" />
-            <Ellipse cx="270" cy="263" rx="3.5" ry="6" fill="#FFB300" />
-            <Ellipse cx="270" cy="260" rx="2" ry="4" fill="#FFE066" />
-            {!showSun && (
-              <Ellipse cx="270" cy="272" rx="15" ry="15" fill="#FF6600" opacity="0.08" />
-            )}
-            {/* Klickyta */}
-            <Rect
-              x="245" y="250" width="55" height="45"
-              fill="transparent"
-              onPress={() => onWorldItemPress('campfire')}
-            />
-          </G>
-        )}
+        <Rect x="545" y="220" width="16" height="90" fill="#3A2010" />
+        <Ellipse cx="553" cy="203" rx="30" ry="38" fill={colors.treeLight} />
+        <Ellipse cx="553" cy="183" rx="22" ry="28" fill={colors.treeDark} />
 
-        {/* Vindskydd — transparent Rect som klickyta */}
+        {/* ─── Vindskydd — till vänster i bakgrunden ────────────────────────── */}
         {worldItems.includes('shelter') && !worldItems.includes('camp') && (
           <G>
-            <Rect x="82" y="228" width="5" height="42" rx="2" fill="#3A2010" />
-            <Rect x="118" y="228" width="5" height="42" rx="2" fill="#3A2010" />
-            <Path d="M76 228 L128 228 L134 270 L70 270 Z" fill="#5C3A1E" />
-            <Path d="M76 228 L128 228 L134 270 L70 270 Z" fill="none" stroke="#3A2010" strokeWidth="2" />
-            <Path d="M78 235 L132 235" stroke="#4A2E14" strokeWidth="1.5" />
-            <Path d="M76 243 L133 243" stroke="#4A2E14" strokeWidth="1.5" />
-            <Path d="M74 251 L133 251" stroke="#4A2E14" strokeWidth="1.5" />
-            <Rect
-              x="68" y="220" width="75" height="55"
-              fill="transparent"
-              onPress={() => onWorldItemPress('shelter')}
-            />
+            <Rect x="95" y="255" width="5" height="45" rx="2" fill="#3A2010" />
+            <Rect x="138" y="255" width="5" height="45" rx="2" fill="#3A2010" />
+            <Path d="M88 255 L150 255 L157 300 L81 300 Z" fill="#5C3A1E" />
+            <Path d="M88 255 L150 255 L157 300 L81 300 Z" fill="none" stroke="#3A2010" strokeWidth="2" />
+            <Path d="M90 263 L156 263" stroke="#4A2E14" strokeWidth="1.5" />
+            <Path d="M87 273 L157 273" stroke="#4A2E14" strokeWidth="1.5" />
+            <Path d="M84 283 L158 283" stroke="#4A2E14" strokeWidth="1.5" />
+            <Rect x="75" y="245" width="90" height="60" fill="transparent"
+              onPress={() => onWorldItemPress('shelter')} />
           </G>
         )}
 
-        {/* Läger — transparent Rect som klickyta */}
+        {/* ─── Läger — centrerat lite till vänster, fullt synligt ───────────── */}
         {worldItems.includes('camp') && (
           <G>
-            <Rect x="65" y="218" width="6" height="52" rx="2" fill="#2A1A0A" />
-            <Rect x="134" y="218" width="6" height="52" rx="2" fill="#2A1A0A" />
-            <Path d="M60 218 L144 218 L150 270 L54 270 Z" fill="#6B4423" />
-            <Path d="M60 218 L144 218 L150 270 L54 270 Z" fill="none" stroke="#3A2010" strokeWidth="2" />
-            <Rect x="92" y="245" width="20" height="25" rx="2" fill="#111" />
-            <Path d="M62 226 L148 226" stroke="#4A2E14" strokeWidth="1.5" />
-            <Path d="M60 236 L149 236" stroke="#4A2E14" strokeWidth="1.5" />
-            <Rect
-              x="50" y="210" width="110" height="65"
-              fill="transparent"
-              onPress={() => onWorldItemPress('camp')}
-            />
+            {/* Fundament */}
+            <Rect x="120" y="272" width="190" height="30" rx="3" fill="#4A3520" />
+            {/* Väggar */}
+            <Rect x="124" y="228" width="182" height="46" fill="#6B4423" />
+
+            {/* Fönster vänster */}
+            <Rect x="136" y="236" width="34" height="26" rx="3" fill="#1A1208" />
+            <Rect x="136" y="236" width="34" height="26" rx="3" fill="none" stroke="#8B6914" strokeWidth="2" />
+            <Rect x="152" y="236" width="2" height="26" fill="#8B6914" />
+            <Rect x="136" y="248" width="34" height="2" fill="#8B6914" />
+            {!showSun && (
+              <Rect x="137" y="237" width="32" height="24" rx="2" fill="#FFD700" opacity="0.12" />
+            )}
+
+            {/* Fönster höger */}
+            <Rect x="260" y="236" width="34" height="26" rx="3" fill="#1A1208" />
+            <Rect x="260" y="236" width="34" height="26" rx="3" fill="none" stroke="#8B6914" strokeWidth="2" />
+            <Rect x="276" y="236" width="2" height="26" fill="#8B6914" />
+            <Rect x="260" y="248" width="34" height="2" fill="#8B6914" />
+            {!showSun && (
+              <Rect x="261" y="237" width="32" height="24" rx="2" fill="#FFD700" opacity="0.12" />
+            )}
+
+            {/* Dörr */}
+            <Rect x="198" y="248" width="34" height="30" rx="3" fill="#3A2010" />
+            <Rect x="198" y="248" width="34" height="30" rx="3" fill="none" stroke="#8B6914" strokeWidth="2" />
+            <Circle cx="229" cy="265" r="3" fill="#D4A843" />
+
+            {/* Tak */}
+            <Path d="M108 230 L215 168 L322 230 Z" fill="url(#roofGrad)" />
+            <Path d="M108 230 L215 168 L322 230 Z" fill="none" stroke="#3A2010" strokeWidth="2" />
+            <Path d="M126 224 L215 172 L304 224" stroke="#4A2810" strokeWidth="1.5" fill="none" opacity="0.5" />
+            <Path d="M144 218 L215 176 L286 218" stroke="#4A2810" strokeWidth="1.5" fill="none" opacity="0.4" />
+            <Rect x="209" y="164" width="12" height="7" rx="2" fill="#3A2010" />
+
+            {/* Skorsten */}
+            <Rect x="268" y="162" width="16" height="34" rx="2" fill="#555" />
+            <Rect x="264" y="158" width="24" height="7" rx="2" fill="#444" />
+            {!showSun && (
+              <G opacity="0.35">
+                <Ellipse cx="276" cy="150" rx="5" ry="7" fill="#888" />
+                <Ellipse cx="279" cy="139" rx="4" ry="6" fill="#777" />
+                <Ellipse cx="275" cy="129" rx="3" ry="5" fill="#666" />
+              </G>
+            )}
+
+            {/* Klickyta */}
+            <Rect x="105" y="160" width="220" height="145" fill="transparent"
+              onPress={() => onWorldItemPress('camp')} />
           </G>
         )}
 
-        {/* Spjut — transparent Rect som klickyta */}
-        {worldItems.includes('spear') && (
-          <G>
-            <Rect x="305" y="240" width="4" height="34" rx="1"
-              fill="#3A2010" transform="rotate(-15 307 257)" />
-            <Path d="M308 238 L313 246 L303 246 Z" fill="#777" />
-            <Path d="M306 247 Q310 250 306 253" stroke="#8B6914" strokeWidth="1.5" fill="none" />
-            <Rect
-              x="295" y="230" width="40" height="55"
-              fill="transparent"
-              onPress={() => onWorldItemPress('spear')}
-            />
-          </G>
-        )}
-
-        {/* Brunn — transparent Rect som klickyta */}
+        {/* ─── Brunn — till vänster om elden, separerat ─────────────────────── */}
         {worldItems.includes('well') && (
           <G>
-            <Ellipse cx="155" cy="268" rx="18" ry="7" fill="#555" />
-            <Rect x="137" y="245" width="36" height="23" rx="3" fill="#666" />
-            <Ellipse cx="155" cy="245" rx="18" ry="7" fill="#777" />
-            <Rect x="138" y="250" width="10" height="6" rx="1" fill="#555" />
-            <Rect x="152" y="250" width="10" height="6" rx="1" fill="#555" />
-            <Rect x="138" y="259" width="10" height="6" rx="1" fill="#555" />
-            <Rect x="152" y="259" width="10" height="6" rx="1" fill="#555" />
-            <Rect x="139" y="225" width="4" height="22" rx="1" fill="#3A2010" />
-            <Rect x="169" y="225" width="4" height="22" rx="1" fill="#3A2010" />
-            <Path d="M133 228 L155 215 L177 228 Z" fill="#5C3A1E" />
-            <Path d="M133 228 L155 215 L177 228 Z" fill="none" stroke="#3A2010" strokeWidth="1.5" />
-            <Rect x="152" y="228" width="2" height="12" fill="#8B6914" />
-            <Rect x="149" y="238" width="8" height="7" rx="2" fill="#8B6914" />
-            <Ellipse cx="153" cy="238" rx="4" ry="2" fill="#6B4A10" />
-            <Rect
-              x="130" y="210" width="55" height="65"
-              fill="transparent"
-              onPress={() => onWorldItemPress('well')}
-            />
+            <Ellipse cx="390" cy="316" rx="20" ry="7" fill="#555" />
+            <Rect x="370" y="292" width="40" height="26" rx="3" fill="#666" />
+            <Ellipse cx="390" cy="292" rx="20" ry="7" fill="#777" />
+            <Rect x="372" y="298" width="11" height="6" rx="1" fill="#555" />
+            <Rect x="387" y="298" width="11" height="6" rx="1" fill="#555" />
+            <Rect x="372" y="308" width="11" height="6" rx="1" fill="#555" />
+            <Rect x="387" y="308" width="11" height="6" rx="1" fill="#555" />
+            <Rect x="373" y="270" width="4" height="24" rx="1" fill="#3A2010" />
+            <Rect x="403" y="270" width="4" height="24" rx="1" fill="#3A2010" />
+            <Path d="M366 274 L390 260 L414 274 Z" fill="#5C3A1E" />
+            <Path d="M366 274 L390 260 L414 274 Z" fill="none" stroke="#3A2010" strokeWidth="1.5" />
+            <Rect x="388" y="274" width="3" height="12" fill="#8B6914" />
+            <Rect x="384" y="284" width="9" height="7" rx="2" fill="#8B6914" />
+            <Ellipse cx="388" cy="284" rx="4.5" ry="2" fill="#6B4A10" />
+            <Rect x="358" y="255" width="65" height="68" fill="transparent"
+              onPress={() => onWorldItemPress('well')} />
           </G>
         )}
 
-        <Rect x="310" y="200" width="22" height="80" fill="#4A2810" />
-        <Ellipse cx="321" cy="182" rx="46" ry="56" fill={colors.treeLight} />
-        <Ellipse cx="321" cy="158" rx="34" ry="42" fill={colors.treeDark} />
-        <Rect x="68" y="195" width="22" height="85" fill="#4A2810" />
-        <Ellipse cx="79" cy="176" rx="48" ry="58" fill={colors.treeLight} />
-        <Ellipse cx="79" cy="152" rx="36" ry="44" fill={colors.treeDark} />
+        {/* ─── Brasa — till vänster om karaktären ──────────────────────────── */}
+        {worldItems.includes('campfire') && (
+          <G>
+            <Ellipse cx="210" cy="316" rx="22" ry="8" fill="#444" />
+            <Rect x="197" y="305" width="26" height="8" rx="3" fill="#3A2010" />
+            <Ellipse cx="210" cy="286" rx="9" ry="13" fill="#CC4400" />
+            <Ellipse cx="207" cy="284" rx="6" ry="10" fill="#FF6600" />
+            <Ellipse cx="213" cy="285" rx="6" ry="9" fill="#FF6600" />
+            <Ellipse cx="210" cy="278" rx="4" ry="7" fill="#FFB300" />
+            <Ellipse cx="210" cy="273" rx="2.5" ry="4.5" fill="#FFE066" />
+            {!showSun && (
+              <Ellipse cx="210" cy="296" rx="20" ry="20" fill="#FF6600" opacity="0.07" />
+            )}
+            <Rect x="182" y="268" width="58" height="55" fill="transparent"
+              onPress={() => onWorldItemPress('campfire')} />
+          </G>
+        )}
 
-        <Ellipse cx="160" cy="276" rx="22" ry="12" fill={colors.treeLight} />
-        <Ellipse cx="240" cy="278" rx="20" ry="11" fill={colors.treeLight} />
+        {/* ─── Spjut — lutat mot höger träd ────────────────────────────────── */}
+        {worldItems.includes('spear') && (
+          <G>
+            <Rect x="468" y="265" width="5" height="42" rx="1"
+              fill="#3A2010" transform="rotate(-12 470 286)" />
+            <Path d="M471 263 L477 274 L465 274 Z" fill="#777" />
+            <Path d="M469 275 Q474 279 469 283" stroke="#8B6914" strokeWidth="1.5" fill="none" />
+            <Rect x="456" y="255" width="52" height="68" fill="transparent"
+              onPress={() => onWorldItemPress('spear')} />
+          </G>
+        )}
 
-        <CharacterInScene appearance={appearance} cx={charX} cy={charY} scale={0.9} />
+        {/* ─── Framre träd — stora, delvis utanför bild ─────────────────────── */}
+        <Rect x="470" y="225" width="24" height="85" fill="#4A2810" />
+        <Ellipse cx="482" cy="205" rx="52" ry="64" fill={colors.treeLight} />
+        <Ellipse cx="482" cy="178" rx="38" ry="48" fill={colors.treeDark} />
+
+        <Rect x="106" y="228" width="24" height="82" fill="#4A2810" />
+        <Ellipse cx="118" cy="208" rx="54" ry="66" fill={colors.treeLight} />
+        <Ellipse cx="118" cy="181" rx="40" ry="50" fill={colors.treeDark} />
+
+        {/* ─── Karaktären ───────────────────────────────────────────────────── */}
+        <CharacterInScene appearance={appearance} cx={charX} cy={charY} scale={0.85} />
+
       </Svg>
     </View>
   );

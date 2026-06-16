@@ -1,7 +1,6 @@
 // navigation.tsx
 // Hanterar all navigering i One Place To Live
-// Stack navigation med tre skärmar: Karaktär, Värld och Inventarie
-// WorldStack har en extra screen för utforskning söderut
+// WorldStack har WorldMain, ExploreScreen och CampScreen
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -11,6 +10,7 @@ import CharacterScreen from './screens/CharacterScreen';
 import WorldScreen from './screens/WorldScreen';
 import InventoryScreen from './screens/InventoryScreen';
 import ExploreScreen from './screens/ExploreScreen';
+import CampScreen from './screens/CampScreen';
 
 export type RootStackParamList = {
   CharacterTab: undefined;
@@ -18,17 +18,17 @@ export type RootStackParamList = {
   InventoryTab: undefined;
 };
 
-// Parametrar för WorldStack — inkluderar ExploreScreen
+// Parametrar för WorldStack
 export type WorldStackParamList = {
   WorldMain: undefined;
   Explore: undefined;
+  Camp: undefined;
 };
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator<RootStackParamList>();
 const WorldStackNav = createStackNavigator<WorldStackParamList>();
 
-// Stack för karaktärsskärmen
 function CharacterStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -37,18 +37,17 @@ function CharacterStack() {
   );
 }
 
-// WorldStack — innehåller WorldScreen och ExploreScreen
-// ExploreScreen nås via pilen i scenen, inte via bottom tabs
+// WorldStack — WorldScreen, ExploreScreen och CampScreen
 function WorldStack() {
   return (
     <WorldStackNav.Navigator screenOptions={{ headerShown: false }}>
       <WorldStackNav.Screen name="WorldMain" component={WorldScreen} />
       <WorldStackNav.Screen name="Explore" component={ExploreScreen} />
+      <WorldStackNav.Screen name="Camp" component={CampScreen} />
     </WorldStackNav.Navigator>
   );
 }
 
-// Stack för inventarieskärmen
 function InventoryStack() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -57,7 +56,6 @@ function InventoryStack() {
   );
 }
 
-// Huvudnavigering med tre flikar längst ner
 export default function Navigation() {
   return (
     <NavigationContainer>
@@ -79,33 +77,23 @@ export default function Navigation() {
           },
         }}
       >
-        {/* Flik 1 — Karaktär */}
         <Tab.Screen
           name="Karaktär"
           component={CharacterStack}
-          options={{
-            tabBarIcon: () => <Text style={{ fontSize: 22 }}>🧑</Text>,
-          }}
+          options={{ tabBarIcon: () => <Text style={{ fontSize: 22 }}>🧑</Text> }}
         />
-
-        {/* Flik 2 — Värld */}
         <Tab.Screen
           name="Värld"
           component={WorldStack}
-          options={{
-            tabBarIcon: () => <Text style={{ fontSize: 22 }}>🌲</Text>,
-          }}
+          options={{ tabBarIcon: () => <Text style={{ fontSize: 22 }}>🌲</Text> }}
         />
-
-        {/* Flik 3 — Inventarie */}
         <Tab.Screen
           name="Inventarie"
           component={InventoryStack}
-          options={{
-            tabBarIcon: () => <Text style={{ fontSize: 22 }}>🎒</Text>,
-          }}
+          options={{ tabBarIcon: () => <Text style={{ fontSize: 22 }}>🎒</Text> }}
         />
       </Tab.Navigator>
     </NavigationContainer>
   );
 }
+
