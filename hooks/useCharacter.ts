@@ -1,9 +1,8 @@
 // hooks/useCharacter.ts
 // Hook för att hantera karaktärsdata mot Firebase
 // Skapar, hämtar och uppdaterar spelarens karaktär
-// Inkluderar vitala värden: hälsa, hunger och törst
-// Migration: lägger automatiskt till vitals/lastVitalsUpdate om de saknas
-// updateVitals adderar/subtraherar värden från nuvarande vitals
+// Inkluderar vitala värden samt equipment (vapen och armor)
+// Migration: lägger automatiskt till vitals/equipment om de saknas
 
 import { useEffect, useState } from 'react';
 import {
@@ -14,17 +13,21 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Character, CharacterAppearance, VitalStats } from '../types';
+import { Character, CharacterAppearance, VitalStats, Equipment, WeaponType, ArmorType } from '../types';
 import { getLevel } from '../constants';
 
-// Sökvägen till spelardokumentet i Firestore
 const getPlayerRef = (userId: string) => doc(db, 'players', userId);
 
-// Standardvärden för vitals när karaktären skapas eller saknar fälten
 const DEFAULT_VITALS: VitalStats = {
   health: 100,
   hunger: 100,
   thirst: 100,
+};
+
+// Standardvärden för equipment — inget utrustat när karaktären skapas
+const DEFAULT_EQUIPMENT: Equipment = {
+  weaponSlot: null,
+  armorSlot: null,
 };
 
 const useCharacter = (userId: string) => {
@@ -35,7 +38,6 @@ const useCharacter = (userId: string) => {
   useEffect(() => {
     if (!userId) return;
 
-    // async-callback krävs för att kunna använda await inuti onSnapshot
     const unsubscribe = onSnapshot(
       getPlayerRef(userId),
       async (snapshot) => {
@@ -44,18 +46,18 @@ const useCharacter = (userId: string) => {
         if (snapshot.exists()) {
           const data = snapshot.data();
 
-          // Kontrollera att character-fältet finns innan vi sätter state
           if (!data?.character) {
             setCharacter(null);
           } else {
             const char = data.character as Character;
 
-            // Migration: lägg till vitals och lastVitalsUpdate om de saknas
-            // Hanterar äldre dokument och nya spelare automatiskt
-            if (!char.vitals || !char.lastVitalsUpdate) {
+            // Migration: lägg till vitals och equipment om de saknas
+            // Hanterar äldre dokument som skapades innan dessa fält fanns
+            if (!char.vitals || !char.lastVitalsUpdate || !char.equipment) {
               await updateDoc(getPlayerRef(userId), {
                 'character.vitals': char.vitals ?? DEFAULT_VITALS,
                 'character.lastVitalsUpdate': char.lastVitalsUpdate ?? Date.now(),
+                'character.equipment': char.equipment ?? DEFAULT_EQUIPMENT,
               });
               // onSnapshot triggas igen automatiskt med de nya värdena
               return;
@@ -79,7 +81,7 @@ const useCharacter = (userId: string) => {
     return () => unsubscribe();
   }, [userId]);
 
-  // Skapar en ny karaktär i Firestore med standardvärden för vitals
+  // Skapar en ny karaktär i Firestore med standardvärden för vitals och equipment
   const createCharacter = async (
     name: string,
     appearance: CharacterAppearance
@@ -94,6 +96,7 @@ const useCharacter = (userId: string) => {
         vitals: DEFAULT_VITALS,
         lastVitalsUpdate: Date.now(),
         createdAt: Date.now(),
+        equipment: DEFAULT_EQUIPMENT,
       };
 
       await setDoc(getPlayerRef(userId), {
@@ -107,7 +110,6 @@ const useCharacter = (userId: string) => {
     }
   };
 
-  // Uppdaterar karaktärens utseende
   const updateAppearance = async (appearance: CharacterAppearance): Promise<void> => {
     try {
       await updateDoc(getPlayerRef(userId), {
@@ -118,8 +120,6 @@ const useCharacter = (userId: string) => {
     }
   };
 
-  // Lägger till erfarenhet och uppdaterar nivån automatiskt
-  // Läser från Firestore direkt för att undvika stale state
   const addExperience = async (amount: number): Promise<void> => {
     try {
       const snapshot = await getDoc(getPlayerRef(userId));
@@ -142,8 +142,6 @@ const useCharacter = (userId: string) => {
   };
 
   // Uppdaterar vitals genom att addera/subtrahera från nuvarande värden
-  // Positiva värden ökar vitalen, negativa minskar den
-  // Resultatet kläms alltid mellan 0 och 100
   const updateVitals = async (vitals: Partial<VitalStats>): Promise<void> => {
     try {
       const snapshot = await getDoc(getPlayerRef(userId));
@@ -155,8 +153,6 @@ const useCharacter = (userId: string) => {
       const freshCharacter = data.character as Character;
       const currentVitals = freshCharacter.vitals ?? DEFAULT_VITALS;
 
-      // Adderar inkommande värden till nuvarande vitals
-      // T.ex. restoresVitals: { thirst: 33 } → thirst + 33, klämt till max 100
       const newVitals: VitalStats = {
         health: Math.min(100, Math.max(0, currentVitals.health + (vitals.health ?? 0))),
         hunger: Math.min(100, Math.max(0, currentVitals.hunger + (vitals.hunger ?? 0))),
@@ -172,7 +168,39 @@ const useCharacter = (userId: string) => {
     }
   };
 
-  return { character, loading, error, createCharacter, updateAppearance, addExperience, updateVitals };
+  // Utrustar ett vapen i weaponSlot — ersätter befintligt vapen om något var utrustat
+  const equipWeapon = async (weapon: WeaponType): Promise<void> => {
+    try {
+      await updateDoc(getPlayerRef(userId), {
+        'character.equipment.weaponSlot': weapon,
+      });
+    } catch (e) {
+      throw new Error('Kunde inte utrusta vapnet.');
+    }
+  };
+
+  // Utrustar en armor i armorSlot — ersätter befintlig armor om något var utrustat
+  const equipArmor = async (armor: ArmorType): Promise<void> => {
+    try {
+      await updateDoc(getPlayerRef(userId), {
+        'character.equipment.armorSlot': armor,
+      });
+    } catch (e) {
+      throw new Error('Kunde inte utrusta armoren.');
+    }
+  };
+
+  return {
+    character,
+    loading,
+    error,
+    createCharacter,
+    updateAppearance,
+    addExperience,
+    updateVitals,
+    equipWeapon,
+    equipArmor,
+  };
 };
 
 export default useCharacter;

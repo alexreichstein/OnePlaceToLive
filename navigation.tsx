@@ -1,6 +1,7 @@
 // navigation.tsx
 // Hanterar all navigering i One Place To Live
-// WorldStack har WorldMain, ExploreScreen och CampScreen
+// Stack navigation med tre skärmar: Karaktär, Värld och Inventarie
+// WorldStack har WorldMain, CombatScreen och CampScreen
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -9,7 +10,7 @@ import { Text } from 'react-native';
 import CharacterScreen from './screens/CharacterScreen';
 import WorldScreen from './screens/WorldScreen';
 import InventoryScreen from './screens/InventoryScreen';
-import ExploreScreen from './screens/ExploreScreen';
+import CombatScreen from './screens/CombatScreen';
 import CampScreen from './screens/CampScreen';
 
 export type RootStackParamList = {
@@ -18,10 +19,10 @@ export type RootStackParamList = {
   InventoryTab: undefined;
 };
 
-// Parametrar för WorldStack
+// Parametrar för WorldStack — Combat ersätter Explore
 export type WorldStackParamList = {
   WorldMain: undefined;
-  Explore: undefined;
+  Combat: undefined;
   Camp: undefined;
 };
 
@@ -37,12 +38,12 @@ function CharacterStack() {
   );
 }
 
-// WorldStack — WorldScreen, ExploreScreen och CampScreen
+// WorldStack — WorldScreen, CombatScreen (PvE) och CampScreen
 function WorldStack() {
   return (
     <WorldStackNav.Navigator screenOptions={{ headerShown: false }}>
       <WorldStackNav.Screen name="WorldMain" component={WorldScreen} />
-      <WorldStackNav.Screen name="Explore" component={ExploreScreen} />
+      <WorldStackNav.Screen name="Combat" component={CombatScreen} />
       <WorldStackNav.Screen name="Camp" component={CampScreen} />
     </WorldStackNav.Navigator>
   );
@@ -96,4 +97,3 @@ export default function Navigation() {
     </NavigationContainer>
   );
 }
-

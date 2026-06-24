@@ -228,7 +228,7 @@ export default function WorldScreen() {
         {!activeTask && (
           <TouchableOpacity
             style={styles.signPost}
-            onPress={() => navigation.navigate('Explore')}
+            onPress={() => navigation.navigate('Combat')}
             activeOpacity={0.8}
           >
             <View style={styles.signBoard}>

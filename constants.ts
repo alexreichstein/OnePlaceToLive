@@ -1,8 +1,8 @@
 // constants.ts
 // Konstanter och speldata för One Place To Live
-// Färger för karaktärsanpassning och task-definitioner
+// Färger, task-definitioner, equipment-statistik och fiendedata
 
-import { TaskDefinition, SkinTone, HairColor, OutfitColor } from './types';
+import { TaskDefinition, SkinTone, HairColor, OutfitColor, WeaponStats, ArmorStats, EnemyDefinition } from './types';
 
 // ─── Karaktärsfärger ──────────────────────────────────────────────────────────
 
@@ -39,6 +39,43 @@ export const getLevel = (experience: number): number => {
     if (experience >= LEVEL_THRESHOLDS[i]) level = i + 1;
   }
   return level;
+};
+
+// ─── Equipment-statistik ──────────────────────────────────────────────────────
+
+// Vapenstatistik — id matchar WeaponType i types.ts
+export const WEAPON_STATS: Record<string, WeaponStats> = {
+  spear: {
+    id: 'spear',
+    name: 'Spear',
+    damage: 12,
+    attackIntervalMs: 1500, // Attackerar var 1.5 sekund
+  },
+};
+
+// Armorstatistik — id matchar ArmorType i types.ts
+export const ARMOR_STATS: Record<string, ArmorStats> = {
+  hide_armor: {
+    id: 'hide_armor',
+    name: 'Hide Armor',
+    defense: 4,
+  },
+};
+
+// ─── Fiendedefinitioner ───────────────────────────────────────────────────────
+
+// Vargen — första fienden i combat-systemet
+export const ENEMY_DEFINITIONS: Record<string, EnemyDefinition> = {
+  wolf: {
+    id: 'wolf',
+    name: 'Wolf',
+    emoji: '🐺',
+    maxHealth: 60,
+    damage: 8,
+    attackIntervalMs: 2000, // Attackerar var 2 sekunder
+    lootRewards: { meat: 3, hide: 2 },
+    experienceReward: 100,
+  },
 };
 
 // ─── Task-definitioner ────────────────────────────────────────────────────────
@@ -150,6 +187,19 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     levelRequired: 2,
   },
 
+  // Gör armor av djurhud — kräver hide från vargjakt + rope
+  make_armor: {
+    id: 'make_armor',
+    name: 'Craft hide armor',
+    description: 'Stitch animal hide together with rope into protective armor.',
+    durationMinutes: 40,
+    requires: { hide: 3, rope: 2 },
+    rewards: {},
+    experienceReward: 70,
+    levelRequired: 2,
+    // Lägger automatiskt armor i inventory — utrustning sker via equip_armor
+  },
+
   // ── Build structures ────────────────────────────────────────────────────────
 
   build_shelter: {
@@ -201,7 +251,7 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     rewards: { meat: 2 },
     experienceReward: 80,
     levelRequired: 3,
-    interactsWith: 'spear', // Visas när man klickar på spjutet
+    interactsWith: 'spear',
   },
 
   // ── Water — interagerar med brunnen ─────────────────────────────────────────
@@ -215,7 +265,6 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     rewards: { water: 3 },
     experienceReward: 15,
     levelRequired: 1,
-    // Ingen interactsWith — visas i vanliga task-listan
   },
 
   fetch_water_well: {
@@ -228,10 +277,10 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     rewards: { water: 3 },
     experienceReward: 5,
     levelRequired: 1,
-    interactsWith: 'well', // Visas när man klickar på brunnen
+    interactsWith: 'well',
   },
 
-  // ── Eat & drink — interagerar med brasan och inventariet ────────────────────
+  // ── Eat & drink ─────────────────────────────────────────────────────────────
 
   drink_water: {
     id: 'drink_water',
@@ -243,7 +292,6 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { thirst: 33 },
     experienceReward: 5,
     levelRequired: 1,
-    // Ingen interactsWith — visas i vanliga task-listan (kan dricka var som helst)
   },
 
   eat_berries: {
@@ -256,7 +304,6 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { hunger: 10 },
     experienceReward: 5,
     levelRequired: 1,
-    // Ingen interactsWith — kan ätas var som helst
   },
 
   eat_mushrooms: {
@@ -269,7 +316,6 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { hunger: 15 },
     experienceReward: 5,
     levelRequired: 1,
-    // Ingen interactsWith — kan ätas var som helst
   },
 
   eat_meat: {
@@ -283,7 +329,37 @@ export const TASK_DEFINITIONS: Record<string, TaskDefinition> = {
     restoresVitals: { hunger: 33 },
     experienceReward: 10,
     levelRequired: 1,
-    interactsWith: 'campfire', // Visas när man klickar på brasan
+    interactsWith: 'campfire',
+  },
+
+  // ── Equip gear — instant, ingen resurskostnad ──────────────────────────────
+
+  // Utrustar spjutet som vapen — kräver att spjutet är byggt i världen
+  equip_weapon: {
+    id: 'equip_weapon',
+    name: 'Equip spear',
+    description: 'Equip the spear as your weapon for combat.',
+    durationMinutes: 0,
+    requires: {},
+    rewards: {},
+    requiresWorldItem: 'spear',
+    experienceReward: 0,
+    levelRequired: 1,
+    equipsWeapon: 'spear',
+    interactsWith: 'spear',
+  },
+
+  // Utrustar hide armor — kräver att den finns i inventory
+  equip_armor: {
+    id: 'equip_armor',
+    name: 'Equip hide armor',
+    description: 'Wear the hide armor for protection in combat.',
+    durationMinutes: 0,
+    requires: { hide: 0 }, // Kontrolleras separat — se WorldScreen-logik
+    rewards: {},
+    experienceReward: 0,
+    levelRequired: 1,
+    equipsArmor: 'hide_armor',
   },
 };
 
@@ -300,6 +376,7 @@ export const RESOURCE_NAMES: Record<string, string> = {
   water:     'Water',
   meat:      'Meat',
   wood:      'Wood',
+  hide:      'Hide',
 };
 
 export const RESOURCE_EMOJIS: Record<string, string> = {
@@ -313,6 +390,7 @@ export const RESOURCE_EMOJIS: Record<string, string> = {
   water:     '💧',
   meat:      '🥩',
   wood:      '🌲',
+  hide:      '🟤',
 };
 
 export const WORLD_ITEM_NAMES: Record<string, string> = {
@@ -323,7 +401,6 @@ export const WORLD_ITEM_NAMES: Record<string, string> = {
   well:     'Well',
 };
 
-// Emoji för varje världsobjekt — används i interaktions-popup
 export const WORLD_ITEM_EMOJIS: Record<string, string> = {
   campfire: '🔥',
   shelter:  '🏕️',
